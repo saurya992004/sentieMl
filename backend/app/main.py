@@ -28,9 +28,9 @@ app.add_middleware(
 )
 
 app.include_router(datasets.router)
-app.include_router(training.router)
-app.include_router(mlflow.router)
 app.include_router(models.router)
+app.include_router(mlflow.router)
+app.include_router(training.router)
 app.include_router(monitoring.router)
 app.include_router(retraining.router)
 app.include_router(governance.router)
