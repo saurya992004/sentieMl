@@ -48,3 +48,7 @@ def apply_phase2_schema() -> None:
         # JSON literal works for both supported database engines.
         connection.execute(text("UPDATE training_jobs SET logs = '[]' WHERE logs IS NULL"))
 
+
+def apply_phase3_schema() -> None:
+    """Additive migration ensuring all Phase 3 tables exist without dropping existing data."""
+    Base.metadata.create_all(bind=engine)
