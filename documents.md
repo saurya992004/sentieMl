@@ -23,7 +23,7 @@ SentinelML is a web application that accepts CSV datasets, trains selected sciki
 - `docker-compose.yml` defines PostgreSQL, Redis, SeaweedFS (S3-compatible storage), one-time bucket creation, MLflow, FastAPI, Celery worker, and frontend services.
 - Persistent Docker volumes: PostgreSQL, Redis, object-storage artifacts, and dataset uploads.
 - Health checks and `restart: unless-stopped` for long-running services.
-- PostgreSQL is configured for both SentinelML metadata and MLflow tracking/model registry metadata.
+- PostgreSQL is configured with separate `sentinelml` (application) and `mlflow` (MLflow tracking/model registry) databases. Separation is required because both products use a `datasets` table.
 - SeaweedFS provides local S3-compatible MLflow artifact storage. AWS S3 deployment settings are documented in `README.md`.
 - Celery with Redis replaced FastAPI in-process background tasks.
 - Training jobs have durable `QUEUED`, `RUNNING`, `COMPLETED`, `FAILED`, and `CANCELLED` states, progress, logs, task ID, retry count, and cooperative cancellation.
@@ -56,7 +56,13 @@ On the current codebase:
 
 ## Current Docker fix
 
-Docker Hub denied both upstream `minio/mc` and `minio/minio` images on this machine. The local S3-compatible service now uses the verified `chrislusf/seaweedfs:4.05` image. A pinned `amazon/aws-cli:2.40.3` one-shot container creates the required artifact bucket through SeaweedFS's S3 API.
+Docker Hub denied both upstream `minio/mc` and `minio/minio` images on this machine. The local S3-compatible service now uses the verified `chrislusf/seaweedfs:4.05` image. A pinned `amazon/aws-cli:2.40.3` one-shot container creates the required artifact bucket through SeaweedFS's S3 API. The service is explicitly bound to `0.0.0.0` so Docker health checks can reach it via localhost.
+
+The upstream MLflow container did not include the PostgreSQL `psycopg` driver. `mlflow/Dockerfile` now adds `psycopg[binary]` and `boto3`, which are required for PostgreSQL tracking and S3-compatible artifact access.
+
+MLflow's backend database URI is expanded by Docker Compose before container start; this avoids passing literal environment-variable strings to MLflow's command process.
+
+The Phase 2 additive job migration uses the SQL boolean literal `FALSE`, which is accepted by both the local SQLite workflow and PostgreSQL containers.
 
 ## How to run locally with Docker
 

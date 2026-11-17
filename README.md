@@ -14,7 +14,7 @@ SentinelML lets users upload CSV datasets, train and compare scikit-learn models
 
 `Frontend → FastAPI → Redis/Celery worker → PostgreSQL + MLflow → S3-compatible artifacts`
 
-SentinelML metadata and job state are stored in PostgreSQL. MLflow uses PostgreSQL for tracking/registry metadata and SeaweedFS locally (or S3 in cloud) for artifacts. The API and worker share a persistent upload volume.
+SentinelML metadata and job state are stored in the `sentinelml` PostgreSQL database. MLflow uses its separate `mlflow` PostgreSQL database for tracking/registry metadata and SeaweedFS locally (or S3 in cloud) for artifacts. The API and worker share a persistent upload volume.
 
 ## Docker quick start
 

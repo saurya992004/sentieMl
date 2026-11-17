@@ -6,8 +6,10 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
       POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_MLFLOW_DB: ${POSTGRES_MLFLOW_DB:-mlflow}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
@@ -29,7 +31,7 @@ services:
   object-store:
     image: chrislusf/seaweedfs:4.05
     restart: unless-stopped
-    command: server -s3 -s3.port=8333 -dir=/data -filer -filer.port=8888
+    command: server -ip.bind=0.0.0.0 -s3 -s3.port=8333 -dir=/data -filer -filer.port=8888
     volumes:
       - object_store_data:/data
     ports: ["8333:8333"]
@@ -55,7 +57,7 @@ services:
       MLFLOW_BUCKET: ${MLFLOW_BUCKET:-mlflow}
 
   mlflow:
-    image: ghcr.io/mlflow/mlflow:v3.18.0
+    build: ./mlflow
     restart: unless-stopped
     depends_on:
       postgres:
@@ -64,13 +66,14 @@ services:
         condition: service_completed_successfully
     command: >-
       mlflow server --host 0.0.0.0 --port 5000
-      --backend-store-uri postgresql://$$POSTGRES_USER:$$POSTGRES_PASSWORD@postgres:5432/$$POSTGRES_DB
-      --artifacts-destination s3://$$MLFLOW_BUCKET
+      --backend-store-uri postgresql://${POSTGRES_USER:?set POSTGRES_USER in .env}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_MLFLOW_DB:-mlflow}
+      --artifacts-destination s3://${MLFLOW_BUCKET:-mlflow}
       --serve-artifacts
     environment:
       POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+      POSTGRES_MLFLOW_DB: ${POSTGRES_MLFLOW_DB:-mlflow}
       MLFLOW_BUCKET: ${MLFLOW_BUCKET:-mlflow}
       MLFLOW_S3_ENDPOINT_URL: http://object-store:8333
       AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:?set MINIO_ROOT_USER in .env}

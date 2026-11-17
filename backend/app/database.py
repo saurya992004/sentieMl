@@ -44,7 +44,7 @@ def apply_phase2_schema() -> None:
         connection.execute(text("UPDATE training_jobs SET status = UPPER(status) WHERE status IS NOT NULL"))
         connection.execute(text("UPDATE training_jobs SET progress = 0 WHERE progress IS NULL"))
         connection.execute(text("UPDATE training_jobs SET attempt_count = 0 WHERE attempt_count IS NULL"))
-        connection.execute(text("UPDATE training_jobs SET cancel_requested = 0 WHERE cancel_requested IS NULL"))
+        connection.execute(text("UPDATE training_jobs SET cancel_requested = FALSE WHERE cancel_requested IS NULL"))
         # JSON literal works for both supported database engines.
         connection.execute(text("UPDATE training_jobs SET logs = '[]' WHERE logs IS NULL"))
 
