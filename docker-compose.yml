@@ -3,9 +3,9 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
-      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-sentinelml}
+      POSTGRES_USER: ${POSTGRES_USER:-sentinelml}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-this-postgres-password}
       POSTGRES_MLFLOW_DB: ${POSTGRES_MLFLOW_DB:-mlflow}
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -50,8 +50,8 @@ services:
     entrypoint: >-
       /bin/sh -c "aws --endpoint-url http://object-store:8333 s3api create-bucket --bucket $$MLFLOW_BUCKET || true"
     environment:
-      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:?set MINIO_ROOT_USER in .env}
-      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD in .env}
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-sentinelml}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-change-this-minio-password}
       AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-us-east-1}
       AWS_EC2_METADATA_DISABLED: "true"
       MLFLOW_BUCKET: ${MLFLOW_BUCKET:-mlflow}
@@ -66,18 +66,18 @@ services:
         condition: service_completed_successfully
     command: >-
       mlflow server --host 0.0.0.0 --port 5000
-      --backend-store-uri postgresql://${POSTGRES_USER:?set POSTGRES_USER in .env}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_MLFLOW_DB:-mlflow}
+      --backend-store-uri postgresql://${POSTGRES_USER:-sentinelml}:${POSTGRES_PASSWORD:-change-this-postgres-password}@postgres:5432/${POSTGRES_MLFLOW_DB:-mlflow}
       --artifacts-destination s3://${MLFLOW_BUCKET:-mlflow}
       --serve-artifacts
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
-      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+      POSTGRES_USER: ${POSTGRES_USER:-sentinelml}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-this-postgres-password}
+      POSTGRES_DB: ${POSTGRES_DB:-sentinelml}
       POSTGRES_MLFLOW_DB: ${POSTGRES_MLFLOW_DB:-mlflow}
       MLFLOW_BUCKET: ${MLFLOW_BUCKET:-mlflow}
       MLFLOW_S3_ENDPOINT_URL: http://object-store:8333
-      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:?set MINIO_ROOT_USER in .env}
-      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD in .env}
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-sentinelml}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-change-this-minio-password}
       AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-us-east-1}
     ports: ["5000:5000"]
     healthcheck:
@@ -97,11 +97,11 @@ services:
       mlflow:
         condition: service_healthy
     environment: &app_env
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:?set POSTGRES_USER in .env}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:?set POSTGRES_DB in .env}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-sentinelml}:${POSTGRES_PASSWORD:-change-this-postgres-password}@postgres:5432/${POSTGRES_DB:-sentinelml}
       MLFLOW_TRACKING_URI: http://mlflow:5000
       MLFLOW_S3_ENDPOINT_URL: http://object-store:8333
-      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:?set MINIO_ROOT_USER in .env}
-      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD in .env}
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-sentinelml}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-change-this-minio-password}
       AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-us-east-1}
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/1
