@@ -129,6 +129,15 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     }),
+
+  // Gemini AI Intelligence
+  getGeminiConfig: () => request<{ configured: boolean; model: string }>('/config/gemini'),
+  setGeminiConfig: (api_key: string) =>
+    request<{ configured: boolean; model: string; message: string }>('/config/gemini', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ api_key }),
+    }),
 }
 
 export type Dataset = {
@@ -154,6 +163,7 @@ export type DatasetProfile = {
   target_analysis: { target_column: string; type: string; unique_count: number; distribution: Record<string, number>; imbalance_ratio: number; is_imbalanced: boolean } | null
   suggested_operations: string[]
   risks: string[]
+  ai_summary?: string
 }
 
 export type AlgorithmRecommendation = {
@@ -172,6 +182,7 @@ export type RecommendationResponse = {
   problem_type: string
   recommended_algorithms: AlgorithmRecommendation[]
   explanation: string
+  ai_insights?: string
   dataset_summary: Record<string, any>
 }
 
@@ -198,6 +209,7 @@ export type ExplanationResponse = {
   local_explanation?: { feature: string; value: any; relative_impact: number; importance_pct: number }[]
   method: string
   summary: string
+  ai_business_translation?: string
 }
 
 export type DriftReport = {
@@ -314,6 +326,7 @@ export type TrainingBody = {
   problem_type: 'classification' | 'regression'
   algorithms: string[]
   primary_metric: string
+  hyperparameters?: Record<string, unknown>
 }
 
 type Experiment = { experiment_id: string; name: string; lifecycle_stage: string }

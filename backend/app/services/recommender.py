@@ -113,6 +113,41 @@ def recommend_models(
             "computational_requirement": "Medium to High",
         })
 
+        # 4. Decision Tree Classifier
+        dt_score = 72.0
+        dt_reasons = ["Highly transparent white-box model with direct rule extractability."]
+        if row_count < 1000:
+            dt_score += 5.0
+            dt_reasons.append("Good baseline for smaller datasets with low latency requirements.")
+        if is_imbalanced:
+            dt_score -= 5.0
+            dt_reasons.append("Single trees can create skewed terminal leaves under heavy imbalance.")
+        recommendations.append({
+            "algorithm": "decision_tree",
+            "display_name": "Decision Tree Classifier",
+            "score": round(max(35.0, min(90.0, dt_score)), 1),
+            "recommended": dt_score >= 70.0,
+            "reasons": dt_reasons,
+            "estimated_speed": "Very Fast (< 1s)",
+            "computational_requirement": "Low",
+        })
+
+        # 5. Extra Trees Classifier
+        et_score = 86.0
+        et_reasons = ["Extremely randomized trees reduce variance and offer faster training than standard Random Forest."]
+        if num_cols > 10:
+            et_score += 4.0
+            et_reasons.append("Random feature cut-points excel on high-dimensional feature spaces.")
+        recommendations.append({
+            "algorithm": "extra_trees",
+            "display_name": "Extra Trees Classifier",
+            "score": round(max(40.0, min(97.0, et_score)), 1),
+            "recommended": et_score >= 75.0,
+            "reasons": et_reasons,
+            "estimated_speed": "Fast (1 - 3s)",
+            "computational_requirement": "Medium",
+        })
+
     else:
         # Regression
         # 1. Linear Regression
@@ -136,7 +171,39 @@ def recommend_models(
             "computational_requirement": "Low",
         })
 
-        # 2. Random Forest Regressor
+        # 2. Ridge Regression
+        ridge_score = 73.0
+        ridge_reasons = ["L2 regularization stabilizes coefficients against multicollinearity."]
+        if num_cols > 10:
+            ridge_score += 5.0
+            ridge_reasons.append("High feature count: L2 weight decay shrinks redundant feature impact.")
+        recommendations.append({
+            "algorithm": "ridge",
+            "display_name": "Ridge Regression (L2)",
+            "score": round(max(30.0, min(92.0, ridge_score)), 1),
+            "recommended": ridge_score >= 68.0,
+            "reasons": ridge_reasons,
+            "estimated_speed": "Very Fast (< 1s)",
+            "computational_requirement": "Low",
+        })
+
+        # 3. Lasso Regression
+        lasso_score = 71.0
+        lasso_reasons = ["L1 regularization produces sparse feature selection by zeroing weak weights."]
+        if num_cols > 15:
+            lasso_score += 6.0
+            lasso_reasons.append("Sparse feature selector: optimal when only a subset of features carry signal.")
+        recommendations.append({
+            "algorithm": "lasso",
+            "display_name": "Lasso Regression (L1)",
+            "score": round(max(30.0, min(90.0, lasso_score)), 1),
+            "recommended": lasso_score >= 68.0,
+            "reasons": lasso_reasons,
+            "estimated_speed": "Very Fast (< 1s)",
+            "computational_requirement": "Low",
+        })
+
+        # 4. Random Forest Regressor
         rf_score = 85.0
         rf_reasons = []
         if has_high_outliers:
@@ -157,7 +224,7 @@ def recommend_models(
             "computational_requirement": "Medium",
         })
 
-        # 3. Gradient Boosting Regressor
+        # 5. Gradient Boosting Regressor
         gb_score = 90.0
         gb_reasons = []
         if row_count >= 500:
@@ -178,6 +245,19 @@ def recommend_models(
             "computational_requirement": "Medium to High",
         })
 
+        # 6. Extra Trees Regressor
+        et_score = 87.0
+        et_reasons = ["Randomized splitting reduces correlation between individual ensemble trees."]
+        recommendations.append({
+            "algorithm": "extra_trees",
+            "display_name": "Extra Trees Regressor",
+            "score": round(max(40.0, min(97.0, et_score)), 1),
+            "recommended": et_score >= 75.0,
+            "reasons": et_reasons,
+            "estimated_speed": "Fast (1 - 3s)",
+            "computational_requirement": "Medium",
+        })
+
     # Sort recommendations by score descending
     recommendations.sort(key=lambda x: x["score"], reverse=True)
 
@@ -187,18 +267,33 @@ def recommend_models(
         f"{'Class imbalance was detected; non-linear ensemble models are favored.' if is_imbalanced else 'Balanced tabular distribution.'}"
     )
 
+    dataset_summary = {
+        "row_count": row_count,
+        "column_count": col_count,
+        "numerical_features": num_cols,
+        "categorical_features": cat_cols,
+        "is_imbalanced": is_imbalanced,
+        "has_high_outliers": has_high_outliers,
+    }
+
+    ai_insights = None
+    try:
+        from .llm import get_ai_recommendation_insights
+        ai_insights = get_ai_recommendation_insights(
+            dataset_summary=dataset_summary,
+            problem_type=problem_type,
+            algorithm_scores=recommendations,
+            target_column=target_column,
+        )
+    except Exception:
+        pass
+
     return {
         "dataset_id": -1,  # caller will fill this
         "target_column": target_column,
         "problem_type": problem_type,
         "recommended_algorithms": recommendations,
         "explanation": summary_text,
-        "dataset_summary": {
-            "row_count": row_count,
-            "column_count": col_count,
-            "numerical_features": num_cols,
-            "categorical_features": cat_cols,
-            "is_imbalanced": is_imbalanced,
-            "has_high_outliers": has_high_outliers,
-        },
+        "ai_insights": ai_insights,
+        "dataset_summary": dataset_summary,
     }

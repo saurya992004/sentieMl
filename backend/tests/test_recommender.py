@@ -10,11 +10,13 @@ def test_recommend_models_classification():
     })
     res = recommend_models(df, target_column="target", problem_type="classification")
     assert res["problem_type"] == "classification"
-    assert len(res["recommended_algorithms"]) == 3
+    assert len(res["recommended_algorithms"]) >= 3
     names = [r["algorithm"] for r in res["recommended_algorithms"]]
     assert "logistic_regression" in names
     assert "random_forest" in names
     assert "gradient_boosting" in names
+    assert "decision_tree" in names
+    assert "extra_trees" in names
     assert len(res["explanation"]) > 0
 
 

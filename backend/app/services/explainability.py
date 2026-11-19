@@ -154,6 +154,18 @@ def explain_pipeline(
         "Important: Feature attribution reflects statistical associations learned by the model and should not be interpreted as proof of causal mechanisms."
     )
 
+    ai_business_translation = None
+    try:
+        from .llm import get_ai_shap_business_translation
+        ai_business_translation = get_ai_shap_business_translation(
+            model_name=model.__class__.__name__,
+            algorithm=model.__class__.__name__,
+            top_features=global_importance,
+            local_sample=local_sample,
+        )
+    except Exception:
+        pass
+
     return {
         "algorithm": model.__class__.__name__,
         "feature_names": feature_names,
@@ -161,4 +173,5 @@ def explain_pipeline(
         "local_explanation": local_explanation if local_sample else None,
         "method": "SHAP" if shap_used else "Intrinsic Attribution",
         "summary": summary,
+        "ai_business_translation": ai_business_translation,
     }

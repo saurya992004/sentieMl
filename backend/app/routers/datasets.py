@@ -51,6 +51,7 @@ async def upload_dataset(file: UploadFile = File(...), db: Session = Depends(get
             target_analysis=profile_res["target_analysis"],
             suggested_operations=profile_res["suggested_operations"],
             risks=profile_res["risks"],
+            ai_summary=profile_res.get("ai_summary"),
         )
         db.add(profile_record)
 
@@ -150,6 +151,7 @@ def get_profile(dataset_id: int, db: Session = Depends(get_db)):
             target_analysis=profile_res["target_analysis"],
             suggested_operations=profile_res["suggested_operations"],
             risks=profile_res["risks"],
+            ai_summary=profile_res.get("ai_summary"),
         )
         db.add(profile_record)
         db.commit()

@@ -6,6 +6,7 @@ import {
   ArrowRight,
   BarChart3,
   CheckCircle2,
+  Code,
   Cpu,
   Database,
   FileCheck,
@@ -19,6 +20,7 @@ import {
   Search,
   Settings,
   ShieldAlert,
+  Sliders,
   Sparkles,
   Terminal,
   TrendingUp,
@@ -69,6 +71,39 @@ export default function App() {
   const [deployments, setDeployments] = useState<DeploymentRecord[]>([])
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
+  const [geminiConfig, setGeminiConfig] = useState<{ configured: boolean; model: string }>({
+    configured: true,
+    model: 'gemini-2.5-flash',
+  })
+  const [showGeminiModal, setShowGeminiModal] = useState(false)
+  const [geminiKeyInput, setGeminiKeyInput] = useState('')
+  const [savingKey, setSavingKey] = useState(false)
+
+  const loadGemini = async () => {
+    try {
+      const cfg = await api.getGeminiConfig()
+      setGeminiConfig(cfg)
+    } catch {
+      // ignore
+    }
+  }
+
+  const handleSaveGeminiKey = async (e: FormEvent) => {
+    e.preventDefault()
+    if (!geminiKeyInput.trim()) return
+    setSavingKey(true)
+    try {
+      const res = await api.setGeminiConfig(geminiKeyInput.trim())
+      setGeminiConfig(res)
+      setMessage('Google Gemini 2.5 Flash connected and active!')
+      setShowGeminiModal(false)
+      setGeminiKeyInput('')
+    } catch (err) {
+      setMessage((err as Error).message)
+    } finally {
+      setSavingKey(false)
+    }
+  }
 
   const refresh = async () => {
     try {
@@ -91,6 +126,7 @@ export default function App() {
 
   useEffect(() => {
     refresh()
+    loadGemini()
     const id = setInterval(refresh, 5000)
     return () => clearInterval(id)
   }, [])
@@ -165,11 +201,60 @@ export default function App() {
             <h1>{navItems.find((n) => n.id === view)?.label}</h1>
           </div>
           <div className="header-actions">
+            <button
+              className={`gemini-pill ${geminiConfig.configured ? 'active' : ''}`}
+              onClick={() => setShowGeminiModal(true)}
+              title="Click to view or update Google Gemini API key"
+            >
+              <Sparkles size={13} />
+              {geminiConfig.configured ? '✨ Gemini AI: Active' : '+ Connect Gemini API'}
+            </button>
             <button className="refresh" onClick={refresh}>
               <RefreshCw size={14} /> Refresh
             </button>
           </div>
         </header>
+
+        {showGeminiModal && (
+          <div className="modal-backdrop" onClick={() => setShowGeminiModal(false)}>
+            <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+              <div className="panel-head">
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#c084fc' }}>
+                  <Sparkles size={18} /> Google Gemini Generative MLOps
+                </h3>
+                <button className="pill-btn" onClick={() => setShowGeminiModal(false)}>×</button>
+              </div>
+              <p style={{ fontSize: '13px', color: '#94a3b8', lineHeight: '1.5', marginBottom: '16px' }}>
+                SentinelML uses <b>Google Gemini 2.5 Flash</b> to generate dynamic executive data intelligence briefs, tailored algorithm trade-off architectures, and SHAP business decision playbooks.
+              </p>
+              <div style={{ marginBottom: '16px', padding: '10px 14px', borderRadius: '8px', background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)' }}>
+                <span style={{ fontSize: '12px', color: '#cbd5e1' }}>
+                  Current Status: <b style={{ color: geminiConfig.configured ? '#34d399' : '#f59e0b' }}>{geminiConfig.configured ? 'Connected & Active (gemini-2.5-flash)' : 'Not Configured'}</b>
+                </span>
+              </div>
+              <form onSubmit={handleSaveGeminiKey}>
+                <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '6px' }}>
+                  Update Gemini API Key:
+                  <input
+                    type="password"
+                    placeholder="AQ.Ab8RN... or AIzaSy..."
+                    value={geminiKeyInput}
+                    onChange={(e) => setGeminiKeyInput(e.target.value)}
+                    style={{ marginTop: '6px' }}
+                  />
+                </label>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '16px' }}>
+                  <button type="button" className="pill-btn" onClick={() => setShowGeminiModal(false)}>
+                    Close
+                  </button>
+                  <button type="submit" className="primary" disabled={savingKey || !geminiKeyInput.trim()}>
+                    <Sparkles size={14} /> {savingKey ? 'Connecting…' : 'Save & Activate'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
         {message && (
           <div className="notice">
@@ -573,6 +658,20 @@ function Datasets({
               </div>
             </div>
 
+            {profile.ai_summary && (
+              <div className="ai-card">
+                <div className="ai-head">
+                  <h4><Sparkles size={16} color="#c084fc" /> Gemini AI Executive Data Intelligence Brief</h4>
+                  <span className="ai-model-tag">gemini-2.5-flash</span>
+                </div>
+                <div className="ai-content">
+                  {profile.ai_summary.split('\n\n').map((para, i) => (
+                    <p key={i}>{para}</p>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {profile.warnings.length > 0 && (
               <>
                 <h3>Data Quality Warnings</h3>
@@ -772,6 +871,20 @@ function Recommendations({
             {recResult.explanation}
           </p>
 
+          {recResult.ai_insights && (
+            <div className="ai-card">
+              <div className="ai-head">
+                <h4><Sparkles size={16} color="#c084fc" /> Gemini AI Model Architecture & Tuning Guidance</h4>
+                <span className="ai-model-tag">gemini-2.5-flash</span>
+              </div>
+              <div className="ai-content">
+                {recResult.ai_insights.split('\n\n').map((para, i) => (
+                  <p key={i}>{para}</p>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="rec-grid">
             {recResult.recommended_algorithms.map((rec) => (
               <div
@@ -833,6 +946,12 @@ function Train({
   ])
   const [metric, setMetric] = useState('f1')
   const [saving, setSaving] = useState(false)
+  const [nEstimators, setNEstimators] = useState<number>(200)
+  const [maxDepth, setMaxDepth] = useState<string>('None')
+  const [learningRate, setLearningRate] = useState<number>(0.1)
+  const [regC, setRegC] = useState<number>(1.0)
+  const [alpha, setAlpha] = useState<number>(1.0)
+  const [showCode, setShowCode] = useState<boolean>(false)
 
   const selected = datasets.find((x) => x.id === Number(datasetId))
 
@@ -863,6 +982,13 @@ function Train({
         problem_type: type,
         algorithms,
         primary_metric: metric,
+        hyperparameters: {
+          n_estimators: nEstimators,
+          max_depth: maxDepth === 'None' ? null : Number(maxDepth),
+          learning_rate: learningRate,
+          C: regC,
+          alpha: alpha,
+        },
       } as TrainingBody)
       announce(`Training job #${job.id} dispatched to Celery background worker.`)
       onStarted()
@@ -879,12 +1005,78 @@ function Train({
           ['logistic_regression', 'Logistic Regression'],
           ['random_forest', 'Random Forest'],
           ['gradient_boosting', 'Gradient Boosting'],
+          ['decision_tree', 'Decision Tree'],
+          ['extra_trees', 'Extra Trees'],
         ]
       : [
           ['linear_regression', 'Linear Regression'],
-          ['random_forest', 'Random Forest'],
-          ['gradient_boosting', 'Gradient Boosting'],
+          ['ridge', 'Ridge Regression (L2)'],
+          ['lasso', 'Lasso Regression (L1)'],
+          ['random_forest', 'Random Forest Regressor'],
+          ['gradient_boosting', 'Gradient Boosting Regressor'],
+          ['decision_tree', 'Decision Tree Regressor'],
+          ['extra_trees', 'Extra Trees Regressor'],
         ]
+
+  const generatedPythonCode = `# --- Scikit-Learn & MLflow Pipeline Code ---
+# Dynamic preprocessing & training pipeline for dataset target: '${target || 'target'}'
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.impute import SimpleImputer
+from sklearn.pipeline import Pipeline
+${type === 'classification' ? `from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, ExtraTreesClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier` : `from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, ExtraTreesRegressor
+from sklearn.linear_model import LinearRegression, Ridge, Lasso
+from sklearn.tree import DecisionTreeRegressor`}
+import mlflow
+
+# 1. Feature Engineering: Separate numeric and categorical features dynamically
+preprocessor = ColumnTransformer(transformers=[
+    ('numeric', Pipeline([
+        ('imputer', SimpleImputer(strategy='median')),
+        ('scaler', StandardScaler())
+    ]), numerical_cols),
+    ('categorical', Pipeline([
+        ('imputer', SimpleImputer(strategy='most_frequent')),
+        ('encoder', OneHotEncoder(handle_unknown='ignore'))
+    ]), categorical_cols)
+])
+
+# 2. Dynamic Model Architecture with User Hyperparameters
+${algorithms.map(algo => {
+  if (algo === 'random_forest') {
+    return `model = ${type === 'classification' ? 'RandomForestClassifier' : 'RandomForestRegressor'}(n_estimators=${nEstimators}, max_depth=${maxDepth === 'None' ? 'None' : maxDepth}, random_state=42)`
+  }
+  if (algo === 'gradient_boosting') {
+    return `model = ${type === 'classification' ? 'GradientBoostingClassifier' : 'GradientBoostingRegressor'}(n_estimators=${nEstimators}, max_depth=${maxDepth === 'None' ? 3 : maxDepth}, learning_rate=${learningRate}, random_state=42)`
+  }
+  if (algo === 'logistic_regression') {
+    return `model = LogisticRegression(C=${regC}, max_iter=1000, random_state=42)`
+  }
+  if (algo === 'ridge') {
+    return `model = Ridge(alpha=${alpha}, random_state=42)`
+  }
+  if (algo === 'lasso') {
+    return `model = Lasso(alpha=${alpha}, random_state=42)`
+  }
+  if (algo === 'decision_tree') {
+    return `model = ${type === 'classification' ? 'DecisionTreeClassifier' : 'DecisionTreeRegressor'}(max_depth=${maxDepth === 'None' ? 'None' : maxDepth}, random_state=42)`
+  }
+  if (algo === 'extra_trees') {
+    return `model = ${type === 'classification' ? 'ExtraTreesClassifier' : 'ExtraTreesRegressor'}(n_estimators=${nEstimators}, max_depth=${maxDepth === 'None' ? 'None' : maxDepth}, random_state=42)`
+  }
+  return `model = LinearRegression()`
+}).join('\n')}
+
+# 3. Assemble Pipeline & Log to MLflow
+pipeline = Pipeline([('preprocessor', preprocessor), ('model', model)])
+with mlflow.start_run():
+    pipeline.fit(X_train, y_train)
+    mlflow.sklearn.log_model(pipeline, "model")
+`
 
   return (
     <>
@@ -959,6 +1151,106 @@ function Train({
             </label>
           ))}
         </fieldset>
+
+        {/* Hyperparameter Customization Panel */}
+        <div className="hp-panel">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h4 style={{ margin: 0, fontSize: '14px', color: '#e0e7ff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Sliders size={16} color="#818cf8" /> Custom Hyperparameter Controls
+            </h4>
+            <button
+              type="button"
+              className="pill-btn"
+              onClick={() => setShowCode(!showCode)}
+              style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <Code size={13} /> {showCode ? 'Hide Pipeline Code' : 'View Generated Pipeline Code'}
+            </button>
+          </div>
+
+          <div className="hp-grid">
+            <div className="hp-item">
+              <label>
+                <span>Estimators (Trees)</span>
+                <span className="val">{nEstimators}</span>
+              </label>
+              <input
+                type="range"
+                min="50"
+                max="500"
+                step="25"
+                value={nEstimators}
+                onChange={(e) => setNEstimators(Number(e.target.value))}
+              />
+            </div>
+
+            <div className="hp-item">
+              <label>
+                <span>Max Depth</span>
+                <span className="val">{maxDepth}</span>
+              </label>
+              <select value={maxDepth} onChange={(e) => setMaxDepth(e.target.value)}>
+                <option value="None">None (Unconstrained)</option>
+                <option value="3">3 (Shallow / High Bias)</option>
+                <option value="5">5 (Balanced)</option>
+                <option value="8">8 (Deep)</option>
+                <option value="12">12</option>
+                <option value="16">16</option>
+                <option value="20">20</option>
+              </select>
+            </div>
+
+            <div className="hp-item">
+              <label>
+                <span>Learning Rate (GB)</span>
+                <span className="val">{learningRate}</span>
+              </label>
+              <input
+                type="range"
+                min="0.01"
+                max="0.4"
+                step="0.02"
+                value={learningRate}
+                onChange={(e) => setLearningRate(Number(e.target.value))}
+              />
+            </div>
+
+            <div className="hp-item">
+              <label>
+                <span>{type === 'classification' ? 'Regularization (C)' : 'Regularization (Alpha)'}</span>
+                <span className="val">{type === 'classification' ? regC : alpha}</span>
+              </label>
+              <input
+                type="range"
+                min="0.1"
+                max="5.0"
+                step="0.1"
+                value={type === 'classification' ? regC : alpha}
+                onChange={(e) => type === 'classification' ? setRegC(Number(e.target.value)) : setAlpha(Number(e.target.value))}
+              />
+            </div>
+          </div>
+
+          {showCode && (
+            <div className="code-drawer">
+              <div className="code-drawer-head">
+                <span>Generated Scikit-Learn Python Pipeline (Worker Task)</span>
+                <button
+                  type="button"
+                  className="pill-btn"
+                  onClick={() => {
+                    navigator.clipboard.writeText(generatedPythonCode)
+                    announce('Copied pipeline Python code to clipboard!')
+                  }}
+                  style={{ fontSize: '11px' }}
+                >
+                  Copy Code
+                </button>
+              </div>
+              <pre className="code-block">{generatedPythonCode}</pre>
+            </div>
+          )}
+        </div>
 
         <button className="primary submit" disabled={saving || !datasetId || !target}>
           <Play size={14} />
@@ -1231,6 +1523,20 @@ function Explainability({
           <p style={{ fontSize: '13px', color: '#a5b4fc', fontStyle: 'italic', marginBottom: '20px' }}>
             {explanation.summary}
           </p>
+
+          {explanation.ai_business_translation && (
+            <div className="ai-card">
+              <div className="ai-head">
+                <h4><Sparkles size={16} color="#c084fc" /> Gemini AI Strategic Business Interpretation</h4>
+                <span className="ai-model-tag">gemini-2.5-flash</span>
+              </div>
+              <div className="ai-content">
+                {explanation.ai_business_translation.split('\n\n').map((para, i) => (
+                  <p key={i}>{para}</p>
+                ))}
+              </div>
+            </div>
+          )}
 
           <h3>Global Feature Importance (%)</h3>
           <ResponsiveContainer width="100%" height={260}>

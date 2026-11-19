@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     aws_access_key_id: str | None = None
     aws_secret_access_key: str | None = None
     aws_default_region: str = "us-east-1"
+    gemini_api_key: str | None = None
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
@@ -27,4 +28,3 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-

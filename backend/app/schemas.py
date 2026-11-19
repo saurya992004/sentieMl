@@ -29,6 +29,7 @@ class DatasetProfileOut(BaseModel):
     target_analysis: dict[str, Any] | None
     suggested_operations: list[str]
     risks: list[str]
+    ai_summary: str | None = None
     created_at: datetime | None = None
     model_config = {"from_attributes": True}
 
@@ -55,6 +56,7 @@ class RecommendationResponse(BaseModel):
     problem_type: str
     recommended_algorithms: list[AlgorithmRecommendation]
     explanation: str
+    ai_insights: str | None = None
     dataset_summary: dict[str, Any]
 
 
@@ -62,8 +64,9 @@ class TrainingStart(BaseModel):
     dataset_id: int
     target_column: str = Field(min_length=1)
     problem_type: Literal["classification", "regression"]
-    algorithms: list[str] = Field(min_length=1, max_length=5)
+    algorithms: list[str] = Field(min_length=1, max_length=10)
     primary_metric: str | None = None
+    hyperparameters: dict[str, Any] | None = None
 
 
 class JobOut(BaseModel):
@@ -79,6 +82,7 @@ class JobOut(BaseModel):
     celery_task_id: str | None
     attempt_count: int
     cancel_requested: bool
+    hyperparameters: dict[str, Any] | None = None
     metrics: dict[str, Any] | None
     best_algorithm: str | None
     mlflow_experiment_id: str | None
@@ -133,6 +137,7 @@ class ExplanationResponse(BaseModel):
     global_importance: list[dict[str, Any]]
     local_explanation: list[dict[str, Any]] | None = None
     summary: str
+    ai_business_translation: str | None = None
 
 
 class DriftAnalysisRequest(BaseModel):

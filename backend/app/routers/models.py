@@ -134,6 +134,7 @@ def get_model_explanations(
             global_importance=res["global_importance"],
             local_explanation=res["local_explanation"],
             summary=res["summary"],
+            ai_business_translation=res.get("ai_business_translation"),
         )
     except Exception as exc:
         raise HTTPException(status_code=422, detail=f"Failed to generate explanations: {exc}") from exc

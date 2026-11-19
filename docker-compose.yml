@@ -109,6 +109,7 @@ services:
       CELERY_RESULT_BACKEND: redis://redis:6379/1
       UPLOAD_DIR: /data/uploads
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-AQ.Ab8RN6LezP5PPnVzwwP87vDCM0acQVX2kR22J12CS06Gc5l0mQ}
     volumes:
       - uploads_data:/data/uploads
     ports: ["8000:8000"]

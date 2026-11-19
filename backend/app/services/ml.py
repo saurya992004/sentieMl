@@ -9,9 +9,10 @@ import mlflow.sklearn
 import numpy as np
 import pandas as pd
 from sklearn.compose import ColumnTransformer
-from sklearn.ensemble import GradientBoostingClassifier, GradientBoostingRegressor, RandomForestClassifier, RandomForestRegressor
+from sklearn.ensemble import ExtraTreesClassifier, ExtraTreesRegressor, GradientBoostingClassifier, GradientBoostingRegressor, RandomForestClassifier, RandomForestRegressor
 from sklearn.impute import SimpleImputer
-from sklearn.linear_model import LinearRegression, LogisticRegression
+from sklearn.linear_model import Lasso, LinearRegression, LogisticRegression, Ridge
+from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from sklearn.metrics import accuracy_score, confusion_matrix, f1_score, mean_absolute_error, mean_squared_error, precision_score, r2_score, recall_score, roc_auc_score
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
@@ -23,16 +24,69 @@ from ..models import AuditLog, Dataset, ModelEvaluation, ModelLifecycle, Trainin
 from .datasets import read_dataset
 
 logger = logging.getLogger(__name__)
-CLASSIFIERS = {
-    "logistic_regression": LogisticRegression(max_iter=1000, random_state=42),
-    "random_forest": RandomForestClassifier(n_estimators=200, random_state=42, n_jobs=-1),
-    "gradient_boosting": GradientBoostingClassifier(random_state=42),
+
+SUPPORTED_CLASSIFIERS = {
+    "logistic_regression",
+    "random_forest",
+    "gradient_boosting",
+    "decision_tree",
+    "extra_trees",
 }
-REGRESSORS = {
-    "linear_regression": LinearRegression(),
-    "random_forest": RandomForestRegressor(n_estimators=200, random_state=42, n_jobs=-1),
-    "gradient_boosting": GradientBoostingRegressor(random_state=42),
+
+SUPPORTED_REGRESSORS = {
+    "linear_regression",
+    "ridge",
+    "lasso",
+    "random_forest",
+    "gradient_boosting",
+    "decision_tree",
+    "extra_trees",
 }
+
+
+def build_estimator(name: str, problem_type: str, user_hyperparams: dict[str, Any] | None = None) -> Any:
+    hp = dict(user_hyperparams or {})
+    algo_hp = hp.get(name, {}) if isinstance(hp.get(name), dict) else hp
+
+    n_estimators = int(algo_hp.get("n_estimators", 200))
+    raw_depth = algo_hp.get("max_depth")
+    max_depth = int(raw_depth) if raw_depth not in (None, "", "None", "null") else None
+    learning_rate = float(algo_hp.get("learning_rate", 0.1))
+    c_val = float(algo_hp.get("C", 1.0))
+    alpha_val = float(algo_hp.get("alpha", 1.0))
+
+    if problem_type == "classification":
+        if name == "logistic_regression":
+            return LogisticRegression(C=c_val, max_iter=1000, random_state=42)
+        if name == "random_forest":
+            return RandomForestClassifier(n_estimators=n_estimators, max_depth=max_depth, random_state=42, n_jobs=-1)
+        if name == "gradient_boosting":
+            return GradientBoostingClassifier(n_estimators=n_estimators, max_depth=max_depth or 3, learning_rate=learning_rate, random_state=42)
+        if name == "decision_tree":
+            return DecisionTreeClassifier(max_depth=max_depth, random_state=42)
+        if name == "extra_trees":
+            return ExtraTreesClassifier(n_estimators=n_estimators, max_depth=max_depth, random_state=42, n_jobs=-1)
+        raise ValueError(f"Unsupported classification algorithm: {name}")
+
+    if name == "linear_regression":
+        return LinearRegression()
+    if name == "ridge":
+        return Ridge(alpha=alpha_val, random_state=42)
+    if name == "lasso":
+        return Lasso(alpha=alpha_val, random_state=42)
+    if name == "random_forest":
+        return RandomForestRegressor(n_estimators=n_estimators, max_depth=max_depth, random_state=42, n_jobs=-1)
+    if name == "gradient_boosting":
+        return GradientBoostingRegressor(n_estimators=n_estimators, max_depth=max_depth or 3, learning_rate=learning_rate, random_state=42)
+    if name == "decision_tree":
+        return DecisionTreeRegressor(max_depth=max_depth, random_state=42)
+    if name == "extra_trees":
+        return ExtraTreesRegressor(n_estimators=n_estimators, max_depth=max_depth, random_state=42, n_jobs=-1)
+    raise ValueError(f"Unsupported regression algorithm: {name}")
+
+
+CLASSIFIERS = {name: build_estimator(name, "classification") for name in SUPPORTED_CLASSIFIERS}
+REGRESSORS = {name: build_estimator(name, "regression") for name in SUPPORTED_REGRESSORS}
 
 
 def _serial(value: Any) -> Any:
@@ -136,10 +190,21 @@ def run_training(job_id: int, raise_on_error: bool = False) -> None:
                 _append_log(job, "Cancellation acknowledged between model runs.")
                 db.commit()
                 return
-            estimator = candidates[name]
+            estimator = build_estimator(name, job.problem_type, job.hyperparameters)
             pipeline = Pipeline([("preprocessor", _preprocessor(X)), ("model", estimator)])
             with mlflow.start_run(run_name=f"job-{job.id}-{name}") as run:
-                mlflow.log_params({"algorithm": name, "problem_type": job.problem_type, "target_column": job.target_column, "train_rows": len(X_train), "test_rows": len(X_test)})
+                base_params = {
+                    "algorithm": name,
+                    "problem_type": job.problem_type,
+                    "target_column": job.target_column,
+                    "train_rows": len(X_train),
+                    "test_rows": len(X_test),
+                }
+                # Log tuned hyperparameters to MLflow
+                for k, v in estimator.get_params().items():
+                    if k in {"n_estimators", "max_depth", "learning_rate", "C", "alpha", "max_iter"}:
+                        base_params[f"hp_{k}"] = str(v)
+                mlflow.log_params(base_params)
                 
                 # Multi-objective measurement
                 t0 = time.perf_counter()

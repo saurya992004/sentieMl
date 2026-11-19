@@ -29,6 +29,7 @@ class DatasetProfile(Base):
     target_analysis: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     suggested_operations: Mapped[list] = mapped_column(JSON, default=list)
     risks: Mapped[list] = mapped_column(JSON, default=list)
+    ai_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
@@ -46,6 +47,7 @@ class TrainingJob(Base):
     celery_task_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
     attempt_count: Mapped[int] = mapped_column(Integer, default=0)
     cancel_requested: Mapped[bool] = mapped_column(default=False)
+    hyperparameters: Mapped[dict | None] = mapped_column(JSON, nullable=True, default=dict)
     metrics: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     best_algorithm: Mapped[str | None] = mapped_column(String(100), nullable=True)
     mlflow_experiment_id: Mapped[str | None] = mapped_column(String(64), nullable=True)

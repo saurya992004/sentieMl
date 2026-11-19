@@ -199,6 +199,22 @@ def profile_dataset(frame: pd.DataFrame, target_column: str | None = None) -> di
     if not suggested_operations:
         suggested_operations.append("Dataset is clean. Standard scaling and encoding are sufficient.")
 
+    # Generate dynamic LLM insights via Gemini (with graceful fallback)
+    ai_summary = None
+    try:
+        from .llm import get_ai_data_profile_summary
+        ai_summary = get_ai_data_profile_summary(
+            quality_score=quality_score,
+            row_count=row_count,
+            col_count=col_count,
+            warnings=warnings,
+            statistics=stats,
+            outliers=outliers,
+            target_info=target_analysis,
+        )
+    except Exception as exc:
+        logger.debug("AI profiling summary fallback: %s", exc)
+
     return {
         "row_count": row_count,
         "column_count": col_count,
@@ -216,4 +232,5 @@ def profile_dataset(frame: pd.DataFrame, target_column: str | None = None) -> di
         "warnings": warnings,
         "suggested_operations": suggested_operations,
         "risks": risks,
+        "ai_summary": ai_summary,
     }
