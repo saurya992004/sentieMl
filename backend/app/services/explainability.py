@@ -16,9 +16,20 @@ def explain_pipeline(
     Uses SHAP when feasible, with robust fallback to tree feature importances
     or linear model coefficients.
     """
+    # Unwrap wrappers if model was loaded via PyFunc or custom wrapper
+    if hasattr(pipeline, "sklearn_model"):
+        pipeline = pipeline.sklearn_model
+    elif hasattr(pipeline, "_model_impl"):
+        pipeline = getattr(pipeline._model_impl, "sklearn_model", pipeline._model_impl)
+
     feature_names = list(X_sample.columns)
-    model = pipeline.named_steps.get("model", pipeline)
-    preprocessor = pipeline.named_steps.get("preprocessor", None)
+    named_steps = getattr(pipeline, "named_steps", None)
+    if named_steps and hasattr(named_steps, "get"):
+        model = named_steps.get("model", pipeline)
+        preprocessor = named_steps.get("preprocessor", None)
+    else:
+        model = pipeline
+        preprocessor = None
 
     # Transform sample if preprocessor exists
     try:

@@ -97,11 +97,17 @@ def get_model_explanations(
                 raise ValueError(f"No versions found for model '{model_name}'")
             resolved_version = max(versions, key=lambda item: int(item.version)).version
 
-        # Load pipeline from MLflow
-        model = mlflow.pyfunc.load_model(f"models:/{model_name}/{resolved_version}")
-        sklearn_pipeline = getattr(model, "_model_impl", model)
-        if hasattr(sklearn_pipeline, "python_model"):
-            sklearn_pipeline = sklearn_pipeline.python_model
+        # Load pipeline from MLflow (prefer native sklearn pipeline, fallback to pyfunc)
+        try:
+            import mlflow.sklearn
+            sklearn_pipeline = mlflow.sklearn.load_model(f"models:/{model_name}/{resolved_version}")
+        except Exception:
+            model = mlflow.pyfunc.load_model(f"models:/{model_name}/{resolved_version}")
+            sklearn_pipeline = getattr(model, "_model_impl", model)
+            if hasattr(sklearn_pipeline, "sklearn_model"):
+                sklearn_pipeline = sklearn_pipeline.sklearn_model
+            elif hasattr(sklearn_pipeline, "python_model"):
+                sklearn_pipeline = sklearn_pipeline.python_model
 
         # Get sample data from dataset
         if dataset_id:
