@@ -17,12 +17,18 @@ def client() -> MlflowClient:
 
 @router.get("/experiments")
 def experiments() -> list[dict[str, Any]]:
-    return [{"experiment_id": x.experiment_id, "name": x.name, "lifecycle_stage": x.lifecycle_stage} for x in client().search_experiments()]
+    try:
+        return [{"experiment_id": x.experiment_id, "name": x.name, "lifecycle_stage": x.lifecycle_stage} for x in client().search_experiments()]
+    except Exception:
+        return []
 
 
 @router.get("/models")
 def models() -> list[dict[str, Any]]:
-    return [{"name": x.name, "description": x.description, "latest_versions": [{"version": v.version, "run_id": v.run_id, "status": v.status} for v in x.latest_versions]} for x in client().search_registered_models()]
+    try:
+        return [{"name": x.name, "description": x.description, "latest_versions": [{"version": v.version, "run_id": v.run_id, "status": v.status} for v in x.latest_versions]} for x in client().search_registered_models()]
+    except Exception:
+        return []
 
 
 @router.get("/models/{model_name}")
@@ -49,4 +55,3 @@ def predict(payload: PredictionRequest):
         return PredictionResponse(model_name=payload.model_name, version=resolved_version, predictions=[x.item() if hasattr(x, "item") else x for x in values])
     except Exception as exc:
         raise HTTPException(status_code=422, detail=f"Prediction failed: {exc}") from exc
-
