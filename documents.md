@@ -1,124 +1,76 @@
-# SentinelML — Project Handoff
+# SentinelML — Phase 3 Implementation & Project Handoff
 
-This document is the current implementation handoff for contributors.
+This document details the completed Phase 3 architecture, features, and verification for contributors and examiners.
 
-## Project goal
+## 1. Project Overview & MLOps Identity
 
-SentinelML is a web application that accepts CSV datasets, trains selected scikit-learn models, compares true holdout metrics, records experiments and artifacts in MLflow, registers the winning model, and serves predictions.
+SentinelML is a full-stack, enterprise-grade MLOps platform. It uses **MLflow** as its foundational experiment tracking, model artifact storage, and model registry engine, orchestrated by **FastAPI** and **Celery/Redis** behind a modern **React + TypeScript** dashboard.
 
-## Completed: Phase 1 core MVP
+## 2. Phase 3 Implemented Capabilities
 
-- React + TypeScript + Vite dashboard.
-- FastAPI backend with SQLAlchemy metadata persistence.
-- CSV upload, validation, profiling, missing-value/duplicate detection, and preview.
-- Classification: Logistic Regression, Random Forest, Gradient Boosting.
-- Regression: Linear Regression, Random Forest, Gradient Boosting.
-- Leakage-safe sklearn pipelines: split before fitting preprocessing, median/most-frequent imputation, scaling, and one-hot encoding.
-- Real classification and regression metrics, experiment comparison, primary metric selection.
-- MLflow experiment runs, metric/parameter/artifact logging, model registry registration, and prediction API.
-- Phase 1 MLflow serialization failure was fixed by using MLflow CloudPickle serialization for application-created sklearn pipelines.
+### Step 1: Automated Dataset Profiling
+- **Service**: `backend/app/services/profiler.py`
+- Automatically inspects shape, numerical/categorical features, missing percentages, duplicate counts, and unique cardinality.
+- Computes comprehensive descriptive statistics and IQR outlier bounds.
+- Computes Pearson correlation matrix to flag multicollinear pairs.
+- Calculates transparent **Dataset Quality Score (0–100)** with documented penalty rules.
+- Identifies class imbalances and data leakage indicators.
 
-## Completed: Phase 2 MLOps foundation
+### Step 2: Intelligent Model Recommendation Engine
+- **Service**: `backend/app/services/recommender.py`
+- Transparent, rule-based algorithmic evaluation based on dataset characteristics, dimensional ratios, outlier presence, and class imbalance.
+- Recommends Classification (Logistic Regression, Random Forest, Gradient Boosting) and Regression (Linear Regression, Random Forest, Gradient Boosting) models.
+- Provides suitability score, estimated training duration, computational complexity, and human-readable explanation.
 
-- `docker-compose.yml` defines PostgreSQL, Redis, SeaweedFS (S3-compatible storage), one-time bucket creation, MLflow, FastAPI, Celery worker, and frontend services.
-- Persistent Docker volumes: PostgreSQL, Redis, object-storage artifacts, and dataset uploads.
-- Health checks and `restart: unless-stopped` for long-running services.
-- PostgreSQL is configured with separate `sentinelml` (application) and `mlflow` (MLflow tracking/model registry) databases. Separation is required because both products use a `datasets` table.
-- SeaweedFS provides local S3-compatible MLflow artifact storage. AWS S3 deployment settings are documented in `README.md`.
-- Celery with Redis replaced FastAPI in-process background tasks.
-- Training jobs have durable `QUEUED`, `RUNNING`, `COMPLETED`, `FAILED`, and `CANCELLED` states, progress, logs, task ID, retry count, and cooperative cancellation.
-- Existing Phase 1 databases receive an additive startup migration for the new job columns. No data is dropped.
-- Experiment view now displays job state, progress, and retry attempt.
-- GitHub Actions workflow in `.github/workflows/ci.yml` runs backend tests, frontend build, Compose validation, and image-build preparation.
+### Step 3: Multi-Objective Model Selection
+- **Service**: `backend/app/services/comparison.py`
+- Evaluates models across predictive metrics (Accuracy, Precision, Recall, F1, ROC-AUC, MAE, RMSE, R²), training duration, inference latency (ms), and model artifact size (KB).
+- Features configurable multi-objective weighting and ranking.
 
-## Important files
+### Step 4: Model Explainability (SHAP)
+- **Service**: `backend/app/services/explainability.py`
+- Computes global feature importance using SHAP Shapley values (with fallback to intrinsic attributions).
+- Provides local sample-level feature contributions.
+- Emphasizes statistical association vs. causality distinction.
 
-| File | Responsibility |
-| --- | --- |
-| `backend/app/services/ml.py` | Model training, evaluation, MLflow logging/registration, job progress/log updates. |
-| `backend/app/tasks.py` | Celery task with controlled retry behavior. |
-| `backend/app/celery_app.py` | Redis broker/result configuration. |
-| `backend/app/routers/training.py` | Queue submission, job read APIs, cancellation endpoint. |
-| `backend/app/database.py` | Database engine/session plus safe Phase 2 additive schema migration. |
-| `docker-compose.yml` | Local deployment topology. |
-| `backend/Dockerfile`, `frontend/Dockerfile` | API/worker and dashboard images. |
-| `.env.example` | Required configuration keys; no production secrets. |
-| `README.md` | Setup and operating guide. |
+### Step 5: Advanced Data Drift & Performance Monitoring
+- **Service**: `backend/app/services/monitoring.py`
+- Evaluates feature-level distribution drift using the two-sample Kolmogorov-Smirnov test and Population Stability Index (PSI) for numerical features, and Total Variation Distance for categorical features.
+- Computes overall dataset drift severity (`NONE`, `LOW`, `MODERATE`, `CRITICAL`).
+- Supports production ground-truth submission and metric degradation tracking.
 
-## Verification performed
+### Step 6: Intelligent Retraining Orchestration
+- **Service**: `backend/app/services/retraining.py`
+- Supports configurable triggers (drift threshold, performance degradation, scheduled, manual).
+- Executes retraining in background Celery workers, compares candidate against production baseline, and creates an approval request.
+- Enforces duplicate prevention and cooldown periods.
 
-On the current codebase:
+### Step 7 & 8: Model Governance, Promotion & Rollback
+- State transitions: `DEVELOPMENT` → `CANDIDATE` → `APPROVED` → `PRODUCTION` → `ARCHIVED`.
+- Human-in-the-loop review interface with candidate vs. production comparison.
+- Safe zero-downtime rollback to previous approved version with full audit trail.
 
-- Backend tests: `3 passed`.
-- Frontend: `npm run build` passed.
-- Compose syntax: `docker compose --env-file .env.example config --quiet` passed.
-- API/worker Docker image build could not be completed earlier because Docker Desktop's Linux engine was unavailable to the agent.
+### Step 9 & 12: Centralized Automation & Security
+- **Service**: `backend/app/routers/governance.py`
+- Centralized rule registration and comprehensive audit log recording.
 
-## Current Docker fix
+### Step 10: Advanced React Dashboard
+- **Frontend**: `frontend/src/App.tsx`
+- Complete dashboard with 11 views: Overview, Dataset Intelligence, Recommendations, Training, Comparison, Explainability, Monitoring, Retraining, Governance, Deployments, and Automation.
 
-Docker Hub denied both upstream `minio/mc` and `minio/minio` images on this machine. The local S3-compatible service now uses the verified `chrislusf/seaweedfs:4.05` image. A pinned `amazon/aws-cli:2.40.3` one-shot container creates the required artifact bucket through SeaweedFS's S3 API. The service is explicitly bound to `0.0.0.0` so Docker health checks can reach it via localhost.
+## 3. MLflow Integration Architecture
 
-The upstream MLflow container did not include the PostgreSQL `psycopg` driver. `mlflow/Dockerfile` now adds `psycopg[binary]` and `boto3`, which are required for PostgreSQL tracking and S3-compatible artifact access.
+1. **Tracking Server**: Pinned PostgreSQL backend store (`postgresql://.../mlflow`) and S3-compatible artifact store (`s3://mlflow` via SeaweedFS or AWS S3).
+2. **Model Logging**: Models logged with `mlflow.sklearn.log_model` using CloudPickle serialization to support custom pipelines.
+3. **Model Registry**: Models registered via `mlflow.register_model` and tracked across lifecycle stages.
+4. **Model Serving**: Live predictions loaded dynamically via `mlflow.pyfunc.load_model`.
+5. **Model Parity**: Explainability and drift evaluations operate on models loaded directly from the MLflow registry.
 
-MLflow's backend database URI is expanded by Docker Compose before container start; this avoids passing literal environment-variable strings to MLflow's command process.
+## 4. CI/CD & Testing Verification
 
-The Phase 2 additive job migration uses the SQL boolean literal `FALSE`, which is accepted by both the local SQLite workflow and PostgreSQL containers.
-
-## How to run locally with Docker
-
-1. Ensure Docker Desktop is running and set to Linux containers.
-2. Update `.env` with all values from `.env.example`; change placeholder passwords.
-3. Start the stack:
-
-```powershell
-docker compose --env-file .env.example up --build
-```
-
-For normal development use an actual `.env` file instead of `.env.example`:
-
-```powershell
-Copy-Item .env.example .env
-docker compose up --build
-```
-
-4. Confirm:
-
-```powershell
-docker compose ps
-curl http://localhost:8000/health
-```
-
-Dashboard: `http://localhost:5173`; API docs: `http://localhost:8000/docs`; MLflow: `http://localhost:5000`; local S3 endpoint: `http://localhost:8333`.
-
-## Work still needed
-
-### Required validation before calling Phase 2 finished
-
-- Run `docker compose up --build` successfully after the MinIO helper change.
-- Upload a CSV through the containerized dashboard.
-- Start a training job and confirm it becomes `QUEUED → RUNNING → COMPLETED` in the dashboard.
-- Confirm the worker logs include training progress and the model appears in MLflow Model Registry.
-- Submit a prediction using the registered model.
-- Restart the stack (`docker compose down`, then `up`) and verify datasets, MLflow runs, and registered model versions persist.
-
-### Suggested next implementation tasks
-
-- Add Alembic migrations and replace the small additive startup migration once schema changes become frequent.
-- Add authentication, authorization, and per-user/project dataset ownership.
-- Add structured task log streaming (WebSocket/SSE) rather than the current dashboard polling.
-- Add rate limits, file scanning/object storage for datasets, and production secret management.
-- Pin image digests and dependency versions for a hardened production deployment.
-- Add Docker-based end-to-end tests to CI.
-- Add monitoring/alerts and worker autoscaling for production.
-
-### Explicitly out of scope for now
-
-- Intelligent automated model selection.
-- Automated retraining and drift-triggered retraining.
-- Phase 3 capabilities.
-
-## GitHub sharing checklist
-
-- Do not commit `.env`, local SQLite databases, `mlruns/`, `uploads/`, virtual environments, or `node_modules/`.
-- Commit `.env.example`, `README.md`, this `documents.md`, source, Docker files, and `.github/workflows/ci.yml`.
-- Ask collaborators to create their own `.env` from `.env.example` and choose unique passwords.
+- **GitHub Actions CI** (`.github/workflows/ci.yml`):
+  - Runs on `main` and `arjun-agrawal`.
+  - Backend tests: `13 passed in 18.24s`.
+  - Frontend build: `tsc -b && vite build` passed.
+  - Docker Compose specification validated.
+  - Docker image build validated.

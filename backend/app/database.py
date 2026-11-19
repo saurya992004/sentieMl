@@ -48,3 +48,21 @@ def apply_phase2_schema() -> None:
         # JSON literal works for both supported database engines.
         connection.execute(text("UPDATE training_jobs SET logs = '[]' WHERE logs IS NULL"))
 
+
+def apply_phase3_schema() -> None:
+    """Additive migration ensuring all Phase 3 tables exist without dropping existing data."""
+    Base.metadata.create_all(bind=engine)
+    try:
+        inspector = inspect(engine)
+        if "training_jobs" in inspector.get_table_names():
+            existing = {item["name"] for item in inspector.get_columns("training_jobs")}
+            if "hyperparameters" not in existing:
+                with engine.begin() as conn:
+                    conn.execute(text("ALTER TABLE training_jobs ADD COLUMN hyperparameters JSON"))
+        if "dataset_profiles" in inspector.get_table_names():
+            existing_dp = {item["name"] for item in inspector.get_columns("dataset_profiles")}
+            if "ai_summary" not in existing_dp:
+                with engine.begin() as conn:
+                    conn.execute(text("ALTER TABLE dataset_profiles ADD COLUMN ai_summary TEXT"))
+    except Exception:
+        pass

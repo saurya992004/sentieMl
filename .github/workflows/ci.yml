@@ -2,9 +2,9 @@ name: SentinelML CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, arjun-agrawal]
   pull_request:
-    branches: [main]
+    branches: [main, arjun-agrawal]
 
 jobs:
   test:
