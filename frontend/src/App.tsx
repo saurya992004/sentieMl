@@ -1,6 +1,32 @@
 import { ChangeEvent, FormEvent, useEffect, useState } from 'react'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import {
+  Activity,
+  AlertTriangle,
+  ArrowRight,
+  BarChart3,
+  CheckCircle2,
+  Cpu,
+  Database,
+  FileCheck,
+  Flame,
+  Layers,
+  Play,
+  RefreshCw,
+  Rocket,
+  RotateCcw,
+  Scale,
+  Search,
+  Settings,
+  ShieldAlert,
+  Sparkles,
+  Terminal,
+  TrendingUp,
+  Upload,
+  XCircle,
+  Zap,
+} from 'lucide-react'
+import {
   AlgorithmRecommendation,
   api,
   AuditLog,
@@ -33,20 +59,6 @@ type View =
   | 'governance'
   | 'deployments'
   | 'automation'
-
-const nav: [View, string, string][] = [
-  ['overview', 'Overview', '◈'],
-  ['datasets', 'Dataset Intelligence', '📊'],
-  ['recommendations', 'Model Recommendations', '💡'],
-  ['train', 'Train & Experiments', '⚡'],
-  ['comparisons', 'Model Comparison', '⚖️'],
-  ['explainability', 'Model Explainability', '🔍'],
-  ['monitoring', 'Drift & Performance', '🛡️'],
-  ['retraining', 'Automated Retraining', '🔄'],
-  ['governance', 'Governance & Approvals', '📋'],
-  ['deployments', 'Deployment & Rollback', '🚀'],
-  ['automation', 'Automation Center', '⚙️'],
-]
 
 export default function App() {
   const [view, setView] = useState<View>('overview')
@@ -83,38 +95,80 @@ export default function App() {
     return () => clearInterval(id)
   }, [])
 
+  const pendingApprovals = approvals.filter((a) => a.status === 'PENDING').length
+
+  const navItems: { id: View; label: string; icon: any; badge?: number }[] = [
+    { id: 'overview', label: 'Overview', icon: Activity },
+    { id: 'datasets', label: 'Dataset Intelligence', icon: Database },
+    { id: 'recommendations', label: 'Model Recommendations', icon: Sparkles },
+    { id: 'train', label: 'Train & Experiments', icon: Cpu },
+    { id: 'comparisons', label: 'Model Comparison', icon: Scale },
+    { id: 'explainability', label: 'Model Explainability', icon: Search },
+    { id: 'monitoring', label: 'Drift & Performance', icon: ShieldAlert },
+    { id: 'retraining', label: 'Automated Retraining', icon: RefreshCw },
+    { id: 'governance', label: 'Governance & Approvals', icon: FileCheck, badge: pendingApprovals },
+    { id: 'deployments', label: 'Deploy & Rollback', icon: Rocket },
+    { id: 'automation', label: 'Automation Center', icon: Settings },
+  ]
+
   return (
     <div className="shell">
       <aside>
         <div className="brand">
-          <span>◈</span> SentinelML
+          <div className="brand-icon">
+            <Zap size={18} color="#fff" />
+          </div>
+          <span className="brand-gradient">SentinelML</span>
         </div>
-        <p className="tag">Intelligent MLOps & Governance</p>
-        {nav.map(([id, label, icon]) => (
-          <button
-            className={view === id ? 'nav active' : 'nav'}
-            key={id}
-            onClick={() => setView(id)}
-          >
-            <span>{icon}</span> {label}
-          </button>
-        ))}
+        <p className="tag">Autonomous MLOps 2.0</p>
+
+        <div className="nav-group">
+          {navItems.map((item) => {
+            const Icon = item.icon
+            return (
+              <button
+                className={`nav ${view === item.id ? 'active' : ''}`}
+                key={item.id}
+                onClick={() => setView(item.id)}
+              >
+                <Icon size={16} />
+                <span>{item.label}</span>
+                {item.badge !== undefined && item.badge > 0 && (
+                  <span className="nav-badge">{item.badge}</span>
+                )}
+              </button>
+            )
+          })}
+        </div>
+
         <div className="aside-bottom">
-          SentinelML 2.0 (Phase 3)
-          <br />
-          MLflow & Celery Engine
+          <div className="status-pill">
+            <span style={{ color: '#94a3b8' }}>MLflow Server</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div className="status-indicator"></div>
+              <span style={{ color: '#34d399', fontWeight: 700 }}>v3.18</span>
+            </div>
+          </div>
+          <div className="status-pill">
+            <span style={{ color: '#94a3b8' }}>Celery Workers</span>
+            <span style={{ color: '#818cf8', fontWeight: 700 }}>Redis Queue</span>
+          </div>
         </div>
       </aside>
 
       <main>
         <header>
           <div>
-            <p className="eyebrow">MLOPS WORKSPACE</p>
-            <h1>{nav.find(([id]) => id === view)?.[1]}</h1>
+            <p className="eyebrow">
+              <Zap size={12} /> ENTERPRISE ML LIFECYCLE
+            </p>
+            <h1>{navItems.find((n) => n.id === view)?.label}</h1>
           </div>
-          <button className="refresh" onClick={refresh}>
-            ↻ Refresh
-          </button>
+          <div className="header-actions">
+            <button className="refresh" onClick={refresh}>
+              <RefreshCw size={14} /> Refresh
+            </button>
+          </div>
         </header>
 
         {message && (
@@ -123,6 +177,41 @@ export default function App() {
             <button onClick={() => setMessage('')}>×</button>
           </div>
         )}
+
+        {/* Global Pipeline Visualizer */}
+        <div className="pipeline-stepper">
+          <div className={`step-chip ${view === 'datasets' ? 'active' : ''}`}>
+            <Database size={13} /> 1. Ingestion & Quality
+          </div>
+          <ArrowRight size={13} color="#475467" />
+          <div className={`step-chip ${view === 'recommendations' ? 'active' : ''}`}>
+            <Sparkles size={13} /> 2. Algorithm Fit
+          </div>
+          <ArrowRight size={13} color="#475467" />
+          <div className={`step-chip ${view === 'train' ? 'active' : ''}`}>
+            <Cpu size={13} /> 3. Celery + MLflow
+          </div>
+          <ArrowRight size={13} color="#475467" />
+          <div className={`step-chip ${view === 'comparisons' ? 'active' : ''}`}>
+            <Scale size={13} /> 4. Multi-Objective
+          </div>
+          <ArrowRight size={13} color="#475467" />
+          <div className={`step-chip ${view === 'explainability' ? 'active' : ''}`}>
+            <Search size={13} /> 5. SHAP Attribution
+          </div>
+          <ArrowRight size={13} color="#475467" />
+          <div className={`step-chip ${view === 'monitoring' ? 'active' : ''}`}>
+            <ShieldAlert size={13} /> 6. Drift Monitor
+          </div>
+          <ArrowRight size={13} color="#475467" />
+          <div className={`step-chip ${view === 'governance' ? 'active' : ''}`}>
+            <FileCheck size={13} /> 7. Human Governance
+          </div>
+          <ArrowRight size={13} color="#475467" />
+          <div className={`step-chip ${view === 'deployments' ? 'active' : ''}`}>
+            <RotateCcw size={13} /> 8. Rollback
+          </div>
+        </div>
 
         {view === 'overview' && (
           <Overview
@@ -165,8 +254,12 @@ export default function App() {
         {view === 'explainability' && (
           <Explainability models={models} datasets={datasets} announce={setMessage} />
         )}
-        {view === 'monitoring' && <Monitoring models={models} datasets={datasets} announce={setMessage} />}
-        {view === 'retraining' && <Retraining models={models} datasets={datasets} announce={setMessage} />}
+        {view === 'monitoring' && (
+          <Monitoring models={models} datasets={datasets} announce={setMessage} />
+        )}
+        {view === 'retraining' && (
+          <Retraining models={models} datasets={datasets} announce={setMessage} />
+        )}
         {view === 'governance' && (
           <Governance
             approvals={approvals}
@@ -191,7 +284,19 @@ export default function App() {
 
 function StatusBadge({ status }: { status: string }) {
   const s = status.toLowerCase()
-  return <span className={`status ${s}`}>{s}</span>
+  return (
+    <span className={`status ${s}`}>
+      <span
+        style={{
+          width: '5px',
+          height: '5px',
+          borderRadius: '50%',
+          backgroundColor: 'currentColor',
+        }}
+      ></span>
+      {s}
+    </span>
+  )
 }
 
 function Empty({ text }: { text: string }) {
@@ -221,60 +326,76 @@ function Overview({
     <>
       <section className="stats">
         <div className="stat">
-          <p>Datasets</p>
+          <div className="stat-icon-bg">
+            <Database size={18} />
+          </div>
+          <p>Datasets Ingested</p>
           <strong>{datasets.length}</strong>
-          <small>Profiling & Intelligence ready</small>
+          <small>Profiling & Quality validated</small>
         </div>
         <div className="stat">
+          <div className="stat-icon-bg">
+            <Cpu size={18} />
+          </div>
           <p>Training Runs</p>
           <strong>{jobs.length}</strong>
-          <small>{completed} completed runs</small>
+          <small>{completed} completed via Celery</small>
         </div>
         <div className="stat">
-          <p>Registered Models</p>
+          <div className="stat-icon-bg">
+            <Layers size={18} />
+          </div>
+          <p>Registered in MLflow</p>
           <strong>{models.length}</strong>
-          <small>MLflow tracking registry</small>
+          <small>Versioned CloudPickle pipelines</small>
         </div>
         <div className="stat">
+          <div className="stat-icon-bg">
+            <FileCheck size={18} />
+          </div>
           <p>Pending Approvals</p>
-          <strong style={{ color: pendingApprovals > 0 ? '#b54708' : 'inherit' }}>
+          <strong style={{ color: pendingApprovals > 0 ? '#fbbf24' : '#fff' }}>
             {pendingApprovals}
           </strong>
-          <small>Human-in-the-loop governance</small>
+          <small>Human governance gate</small>
         </div>
       </section>
 
       <div className="twocol">
         <section className="panel">
           <div className="panel-head">
-            <h2>Recent Training Jobs</h2>
+            <h2>
+              <Activity size={18} color="#818cf8" /> Recent Training Jobs
+            </h2>
             <button className="btn-sm" onClick={() => setView('train')}>
               View All
             </button>
           </div>
           {jobs.length ? (
-            <table>
-              <thead>
-                <tr>
-                  <th>Job</th>
-                  <th>Target</th>
-                  <th>Status</th>
-                  <th>Best Algorithm</th>
-                </tr>
-              </thead>
-              <tbody>
-                {jobs.slice(0, 5).map((job) => (
-                  <tr key={job.id}>
-                    <td>#{job.id}</td>
-                    <td>{job.target_column}</td>
-                    <td>
-                      <StatusBadge status={job.status} />
-                    </td>
-                    <td>{job.best_algorithm ?? '—'}</td>
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Job ID</th>
+                    <th>Target</th>
+                    <th>Status</th>
+                    <th>Winner</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {jobs.slice(0, 5).map((job) => (
+                    <tr key={job.id}>
+                      <td>#{job.id}</td>
+                      <td>{job.target_column}</td>
+                      <td>
+                        <StatusBadge status={job.status} />
+                      </td>
+                      <td><b>{job.best_algorithm ?? '—'}</b></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           ) : (
             <Empty text="Upload a CSV dataset to initiate training." />
           )}
@@ -282,39 +403,43 @@ function Overview({
 
         <section className="panel">
           <div className="panel-head">
-            <h2>Pending Governance Approvals</h2>
+            <h2>
+              <ShieldAlert size={18} color="#f59e0b" /> Pending Governance Reviews
+            </h2>
             <button className="btn-sm" onClick={() => setView('governance')}>
               Review
             </button>
           </div>
           {approvals.filter((a) => a.status === 'PENDING').length ? (
-            <table>
-              <thead>
-                <tr>
-                  <th>Candidate</th>
-                  <th>Version</th>
-                  <th>Current Prod</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {approvals
-                  .filter((a) => a.status === 'PENDING')
-                  .slice(0, 5)
-                  .map((a) => (
-                    <tr key={a.id}>
-                      <td>{a.candidate_model_name}</td>
-                      <td>v{a.candidate_version}</td>
-                      <td>{a.current_production_version ? `v${a.current_production_version}` : 'None'}</td>
-                      <td>
-                        <StatusBadge status={a.status} />
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Candidate</th>
+                    <th>Version</th>
+                    <th>Current Prod</th>
+                    <th>Decision</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {approvals
+                    .filter((a) => a.status === 'PENDING')
+                    .slice(0, 5)
+                    .map((a) => (
+                      <tr key={a.id}>
+                        <td><b>{a.candidate_model_name}</b></td>
+                        <td>v{a.candidate_version}</td>
+                        <td>{a.current_production_version ? `v${a.current_production_version}` : 'None'}</td>
+                        <td>
+                          <StatusBadge status={a.status} />
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
           ) : (
-            <Empty text="No candidates currently pending approval." />
+            <Empty text="All models are verified. Zero pending governance reviews." />
           )}
         </section>
       </div>
@@ -359,7 +484,7 @@ function Datasets({
     setBusy(true)
     try {
       const uploaded = await api.upload(file)
-      announce(`Uploaded and automatically profiled ${uploaded.name}`)
+      announce(`Uploaded & auto-profiled ${uploaded.name}`)
       await onChanged()
       await loadDatasetDetails(uploaded.id)
     } catch (err) {
@@ -374,9 +499,10 @@ function Datasets({
     <div className="split">
       <section className="panel">
         <div className="panel-head">
-          <h2>Datasets</h2>
+          <h2>Datasets Ingested</h2>
           <label className="primary">
-            {busy ? 'Processing…' : 'Upload CSV'}
+            <Upload size={14} />
+            {busy ? 'Profiling…' : 'Upload CSV'}
             <input type="file" accept=".csv,text/csv" onChange={upload} disabled={busy} />
           </label>
         </div>
@@ -390,7 +516,7 @@ function Datasets({
               >
                 <b>{d.name}</b>
                 <span>
-                  {d.row_count.toLocaleString()} rows · {d.column_count} columns
+                  {d.row_count.toLocaleString()} rows · {d.column_count} features
                 </span>
               </button>
             ))}
@@ -402,11 +528,16 @@ function Datasets({
 
       <section className="panel detail">
         {loadingProfile ? (
-          <p>Generating dataset profiling and intelligence report…</p>
+          <p className="empty">Generating dataset profiling and quality score…</p>
         ) : selected && profile ? (
           <>
             <div className="panel-head">
-              <h2>{selected.name}</h2>
+              <div>
+                <h2>{selected.name}</h2>
+                <span style={{ fontSize: '12px', color: '#94a3b8' }}>
+                  Ingested {new Date(selected.created_at).toLocaleString()}
+                </span>
+              </div>
               <div
                 className={`score-badge ${
                   profile.quality_score >= 80
@@ -416,16 +547,30 @@ function Datasets({
                     : 'score-bad'
                 }`}
               >
-                <span>Quality Score:</span>
-                <strong>{profile.quality_score} / 100</strong>
+                <Sparkles size={16} />
+                <span>Quality Score: {profile.quality_score} / 100</span>
               </div>
             </div>
 
-            <div className="mini-stats">
-              <span><b>{selected.row_count.toLocaleString()}</b> rows</span>
-              <span><b>{selected.column_count}</b> columns</span>
-              <span><b>{selected.duplicate_rows}</b> duplicates</span>
-              <span><b>{profile.warnings.length}</b> quality warnings</span>
+            <div className="stats" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: '16px' }}>
+              <div className="stat" style={{ padding: '14px' }}>
+                <p>Rows</p>
+                <strong style={{ fontSize: '22px' }}>{selected.row_count.toLocaleString()}</strong>
+              </div>
+              <div className="stat" style={{ padding: '14px' }}>
+                <p>Features</p>
+                <strong style={{ fontSize: '22px' }}>{selected.column_count}</strong>
+              </div>
+              <div className="stat" style={{ padding: '14px' }}>
+                <p>Duplicates</p>
+                <strong style={{ fontSize: '22px' }}>{selected.duplicate_rows}</strong>
+              </div>
+              <div className="stat" style={{ padding: '14px' }}>
+                <p>Warnings</p>
+                <strong style={{ fontSize: '22px', color: profile.warnings.length ? '#f59e0b' : '#10b981' }}>
+                  {profile.warnings.length}
+                </strong>
+              </div>
             </div>
 
             {profile.warnings.length > 0 && (
@@ -434,6 +579,7 @@ function Datasets({
                 <div className="warnings-box">
                   {profile.warnings.map((w, i) => (
                     <div key={i} className={`warning-item sev-${w.severity}`}>
+                      <AlertTriangle size={15} />
                       <span className="badge-pill">{w.severity}</span>
                       <span>
                         <b>{w.column}:</b> {w.message}
@@ -444,43 +590,26 @@ function Datasets({
               </>
             )}
 
-            {profile.suggested_operations.length > 0 && (
-              <>
-                <h3>Suggested Preprocessing</h3>
-                <ul>
-                  {profile.suggested_operations.map((op, i) => (
-                    <li key={i} style={{ fontSize: '13px', marginBottom: '4px' }}>
-                      {op}
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
+            <h3>Suggested Preprocessing Operations</h3>
+            <ul style={{ paddingLeft: '20px', color: '#94a3b8', fontSize: '13px', marginBottom: '16px' }}>
+              {profile.suggested_operations.map((op, i) => (
+                <li key={i} style={{ marginBottom: '6px' }}>
+                  {op}
+                </li>
+              ))}
+            </ul>
 
-            {profile.risks.length > 0 && (
-              <>
-                <h3>Identified Training Risks</h3>
-                <ul>
-                  {profile.risks.map((risk, i) => (
-                    <li key={i} style={{ fontSize: '13px', color: '#b42318', marginBottom: '4px' }}>
-                      {risk}
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
-
-            <h3>Descriptive Statistics & Feature Analysis</h3>
+            <h3>Feature Statistics & Outlier Counts (IQR)</h3>
             <div className="table-wrap">
               <table>
                 <thead>
                   <tr>
                     <th>Feature</th>
                     <th>Type</th>
-                    <th>Missing</th>
-                    <th>Mean / Top</th>
+                    <th>Outliers</th>
+                    <th>Mean / Mode</th>
                     <th>Std / Freq</th>
-                    <th>Min / Unique</th>
+                    <th>Min / Uniques</th>
                     <th>Max</th>
                   </tr>
                 </thead>
@@ -489,7 +618,15 @@ function Datasets({
                     <tr key={feat}>
                       <td><b>{feat}</b></td>
                       <td>{st.type}</td>
-                      <td>{profile.outliers[feat]?.outlier_count ? `${profile.outliers[feat].outlier_count} outliers` : '0'}</td>
+                      <td>
+                        {profile.outliers[feat]?.outlier_count ? (
+                          <span style={{ color: '#f59e0b' }}>
+                            {profile.outliers[feat].outlier_count} ({profile.outliers[feat].outlier_percentage}%)
+                          </span>
+                        ) : (
+                          '0'
+                        )}
+                      </td>
                       <td>{st.mean ?? st.top ?? '—'}</td>
                       <td>{st.std ?? st.top_freq ?? '—'}</td>
                       <td>{st.min ?? st.unique ?? '—'}</td>
@@ -500,7 +637,7 @@ function Datasets({
               </table>
             </div>
 
-            <h3>Dataset Preview (First 15 Rows)</h3>
+            <h3>Sample Records (First 10)</h3>
             <div className="table-wrap">
               <table>
                 <thead>
@@ -510,7 +647,7 @@ function Datasets({
                   </tr>
                 </thead>
                 <tbody>
-                  {selected.preview.slice(0, 15).map((row, i) => (
+                  {selected.preview.slice(0, 10).map((row, i) => (
                     <tr key={i}>
                       {Object.keys(row).map((k) => (
                         <td key={k}>{String(row[k] ?? '—')}</td>
@@ -522,7 +659,7 @@ function Datasets({
             </div>
           </>
         ) : (
-          <Empty text="Select a dataset to view its automated profiling intelligence report." />
+          <Empty text="Select a dataset on the left to inspect its profiling report." />
         )}
       </section>
     </div>
@@ -564,7 +701,7 @@ function Recommendations({
         problem_type: probType,
       })
       setRecResult(res)
-      announce('Generated intelligent model recommendations.')
+      announce('Generated algorithmic recommendations.')
     } catch (err) {
       announce((err as Error).message)
     } finally {
@@ -575,10 +712,12 @@ function Recommendations({
   return (
     <div>
       <form className="panel form" onSubmit={analyze}>
-        <h2>Intelligent Algorithm Recommendation Engine</h2>
-        <p style={{ fontSize: '13px', color: '#475467', marginBottom: '16px' }}>
-          SentinelML analyzes dataset dimensions, class imbalance, missingness, and feature types to
-          recommend suitable machine learning algorithms with transparent reasoning.
+        <h2>
+          <Sparkles size={18} color="#818cf8" /> Algorithm Recommendation Engine
+        </h2>
+        <p style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '18px' }}>
+          SentinelML evaluates dataset scale, dimensional cardinality, feature interactions, and
+          class distributions to recommend candidate algorithms with transparent rationale.
         </p>
 
         <div className="twocol">
@@ -621,14 +760,15 @@ function Recommendations({
         </label>
 
         <button className="primary submit" disabled={loading || !datasetId || !target}>
-          {loading ? 'Evaluating Algorithms…' : 'Generate Recommendations'}
+          <Sparkles size={14} />
+          {loading ? 'Evaluating Algorithms…' : 'Generate Model Recommendations'}
         </button>
       </form>
 
       {recResult && (
         <section className="panel">
-          <h2>Recommended Algorithms for {recResult.target_column}</h2>
-          <p style={{ fontSize: '13px', color: '#344054', fontStyle: 'italic', marginBottom: '14px' }}>
+          <h2>Recommendations for Target: {recResult.target_column}</h2>
+          <p style={{ fontSize: '13px', color: '#a5b4fc', fontStyle: 'italic', marginBottom: '16px' }}>
             {recResult.explanation}
           </p>
 
@@ -641,11 +781,11 @@ function Recommendations({
                 <h4>
                   <span>{rec.display_name}</span>
                   <span className={`status ${rec.recommended ? 'completed' : 'failed'}`}>
-                    Score: {rec.score}
+                    Fit: {rec.score}%
                   </span>
                 </h4>
                 <p>
-                  <b>Suitability:</b> {rec.recommended ? 'Recommended' : 'Secondary candidate'}
+                  <b>Recommendation Status:</b> {rec.recommended ? 'Recommended Candidate' : 'Secondary Alternative'}
                 </p>
                 <ul>
                   {rec.reasons.map((r, i) => (
@@ -653,16 +793,16 @@ function Recommendations({
                   ))}
                 </ul>
                 <div className="rec-meta">
-                  <span>Speed: {rec.estimated_speed}</span> · 
+                  <span>Speed: {rec.estimated_speed}</span>
                   <span>Compute: {rec.computational_requirement}</span>
                 </div>
               </div>
             ))}
           </div>
 
-          <div style={{ marginTop: '20px' }}>
+          <div style={{ marginTop: '24px' }}>
             <button className="primary" onClick={onTrainApplied}>
-              Train Recommended Models →
+              <Play size={14} /> Proceed to Train Recommended Models →
             </button>
           </div>
         </section>
@@ -749,7 +889,9 @@ function Train({
   return (
     <>
       <form className="form panel" onSubmit={submit}>
-        <h2>Configure & Train Models</h2>
+        <h2>
+          <Cpu size={18} color="#818cf8" /> Configure Distributed Training Run
+        </h2>
         <div className="twocol">
           <label>
             Dataset
@@ -763,7 +905,7 @@ function Train({
             </select>
           </label>
           <label>
-            Target column
+            Target Column
             <select
               value={target}
               onChange={(e) => setTarget(e.target.value)}
@@ -779,20 +921,20 @@ function Train({
 
         <div className="twocol">
           <label>
-            Problem type
+            Problem Type
             <select value={type} onChange={(e) => setType(e.target.value as typeof type)}>
               <option value="classification">Classification</option>
               <option value="regression">Regression</option>
             </select>
           </label>
           <label>
-            Primary metric
+            Primary Metric
             <select value={metric} onChange={(e) => setMetric(e.target.value)}>
               {(type === 'classification'
                 ? ['f1', 'accuracy', 'precision', 'recall']
                 : ['rmse', 'mae', 'r2']
               ).map((x) => (
-                <option key={x}>{x}</option>
+                <option key={x}>{x.toUpperCase()}</option>
               ))}
             </select>
           </label>
@@ -819,12 +961,15 @@ function Train({
         </fieldset>
 
         <button className="primary submit" disabled={saving || !datasetId || !target}>
-          {saving ? 'Queueing Job…' : 'Start Training in Celery Worker'}
+          <Play size={14} />
+          {saving ? 'Queueing in Redis…' : 'Start Asynchronous Training Run'}
         </button>
       </form>
 
       <section className="panel">
-        <h2>Training Jobs & MLflow Runs</h2>
+        <h2>
+          <Activity size={18} color="#818cf8" /> Training Jobs & MLflow Registration
+        </h2>
         {jobs.length ? (
           <div className="table-wrap">
             <table>
@@ -834,8 +979,8 @@ function Train({
                   <th>Dataset</th>
                   <th>Target</th>
                   <th>Status & Progress</th>
-                  <th>Winner</th>
-                  <th>MLflow Run</th>
+                  <th>Winning Algorithm</th>
+                  <th>MLflow Run ID</th>
                 </tr>
               </thead>
               <tbody>
@@ -846,7 +991,9 @@ function Train({
                     <td>{j.target_column}</td>
                     <td>
                       <StatusBadge status={j.status} />
-                      <small style={{ marginLeft: '6px' }}>{j.progress}%</small>
+                      <span style={{ marginLeft: '8px', fontSize: '11px', color: '#94a3b8' }}>
+                        {j.progress}%
+                      </span>
                       {j.error && <small className="err">{j.error}</small>}
                     </td>
                     <td><b>{j.best_algorithm ?? '—'}</b></td>
@@ -864,7 +1011,7 @@ function Train({
   )
 }
 
-// ----------------- 5. MODEL COMPARISONS & MULTI-OBJECTIVE RANKING -----------------
+// ----------------- 5. MODEL COMPARISON -----------------
 function Comparisons() {
   const [probType, setProbType] = useState('classification')
   const [metric, setMetric] = useState('f1')
@@ -897,7 +1044,9 @@ function Comparisons() {
     <>
       <section className="panel">
         <div className="panel-head">
-          <h2>Multi-Objective Model Comparison & Ranking</h2>
+          <h2>
+            <Scale size={18} color="#818cf8" /> Multi-Objective Model Comparison & Ranking
+          </h2>
           <div style={{ display: 'flex', gap: '10px' }}>
             <select value={probType} onChange={(e) => setProbType(e.target.value)}>
               <option value="classification">Classification</option>
@@ -916,56 +1065,68 @@ function Comparisons() {
           </div>
         </div>
 
-        <p style={{ fontSize: '13px', color: '#475467', marginBottom: '18px' }}>
-          Models are evaluated across predictive performance, inference latency, training time, and
-          artifact size. No single model is claimed as universally best.
+        <p style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '20px' }}>
+          In production MLOps, raw accuracy is insufficient. SentinelML normalizes predictive
+          power, inference latency, training time, and artifact size into a balanced suitability index.
         </p>
 
         {chartData.length > 0 && (
-          <div style={{ marginBottom: '22px' }}>
-            <h3>Multi-Objective Score Comparison</h3>
+          <div style={{ marginBottom: '24px' }}>
+            <h3>Multi-Objective Suitability Score</h3>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="Score" fill="#4f46e5" radius={[4, 4, 0, 0]} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                <XAxis dataKey="name" stroke="#94a3b8" />
+                <YAxis stroke="#94a3b8" />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)' }}
+                />
+                <Bar dataKey="Score" fill="#6366f1" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         )}
 
         {loading ? (
-          <p>Computing rankings…</p>
+          <p className="empty">Computing multi-objective rankings…</p>
         ) : ranked.length ? (
           <div className="table-wrap">
             <table>
               <thead>
                 <tr>
                   <th>Rank</th>
-                  <th>Model / Algorithm</th>
-                  <th>Primary Metric ({metric})</th>
+                  <th>Algorithm</th>
+                  <th>{metric.toUpperCase()}</th>
                   <th>Latency</th>
-                  <th>Train Time</th>
-                  <th>Artifact Size</th>
-                  <th>Overall Score</th>
-                  <th>Selection Reasoning</th>
+                  <th>Train Duration</th>
+                  <th>Size (KB)</th>
+                  <th>Composite Score</th>
+                  <th>Selection Rationale</th>
                 </tr>
               </thead>
               <tbody>
                 {ranked.map((m) => (
                   <tr key={m.model_name}>
-                    <td><b>#{m.rank}</b></td>
+                    <td>
+                      <span
+                        className="badge-pill"
+                        style={{
+                          background: m.rank === 1 ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.05)',
+                          color: m.rank === 1 ? '#34d399' : '#94a3b8',
+                        }}
+                      >
+                        #{m.rank}
+                      </span>
+                    </td>
                     <td><b>{m.algorithm}</b></td>
                     <td>{m.metrics[metric] !== undefined ? Number(m.metrics[metric]).toFixed(4) : '—'}</td>
                     <td>{m.inference_latency_ms} ms</td>
                     <td>{m.training_time_seconds} s</td>
                     <td>{m.model_size_kb} KB</td>
                     <td>
-                      <span className="status completed">{m.overall_score}/100</span>
+                      <span className="status completed">{m.overall_score} / 100</span>
                     </td>
-                    <td style={{ fontSize: '11px', whiteSpace: 'normal', minWidth: '280px' }}>
+                    <td style={{ whiteSpace: 'normal', minWidth: '300px', fontSize: '12px' }}>
                       {m.selection_reasoning}
                     </td>
                   </tr>
@@ -974,7 +1135,7 @@ function Comparisons() {
             </table>
           </div>
         ) : (
-          <Empty text="No model evaluations recorded yet. Train models to see comparisons." />
+          <Empty text="No model evaluations found. Train models to view ranking trade-offs." />
         )}
       </section>
     </>
@@ -1000,7 +1161,11 @@ function Explainability({
     if (!modelName) return announce('Select a model to explain.')
     setLoading(true)
     try {
-      const res = await api.explanations(modelName, 'latest', datasetId ? Number(datasetId) : undefined)
+      const res = await api.explanations(
+        modelName,
+        'latest',
+        datasetId ? Number(datasetId) : undefined
+      )
       setExplanation(res)
     } catch (err) {
       announce((err as Error).message)
@@ -1017,10 +1182,12 @@ function Explainability({
   return (
     <>
       <section className="panel form">
-        <h2>Model Explainability & Feature Attribution</h2>
+        <h2>
+          <Search size={18} color="#818cf8" /> Model Explainability (SHAP Values)
+        </h2>
         <div className="twocol">
           <label>
-            Model
+            Registered Model
             <select value={modelName} onChange={(e) => setModelName(e.target.value)}>
               <option value="">Select registered model</option>
               {models.map((m) => (
@@ -1033,7 +1200,7 @@ function Explainability({
           <label>
             Reference Dataset
             <select value={datasetId} onChange={(e) => setDatasetId(e.target.value)}>
-              <option value="">Use latest dataset</option>
+              <option value="">Use latest uploaded dataset</option>
               {datasets.map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.name}
@@ -1042,43 +1209,50 @@ function Explainability({
             </select>
           </label>
         </div>
-        <button className="primary submit" disabled={loading || !modelName} onClick={loadExplanation}>
-          {loading ? 'Computing SHAP Attributions…' : 'Generate Model Explanations'}
+        <button
+          className="primary submit"
+          disabled={loading || !modelName}
+          onClick={loadExplanation}
+        >
+          <Search size={14} />
+          {loading ? 'Computing Shapley Attributions…' : 'Generate Model Explainability Report'}
         </button>
       </section>
 
       {explanation && (
         <section className="panel">
           <div className="panel-head">
-            <h2>Explainability Report for {explanation.model_name}</h2>
-            <span className="badge-pill" style={{ background: '#eef2ff', color: '#4f46e5' }}>
-              Method: {explanation.method}
+            <h2>Explainability: {explanation.model_name}</h2>
+            <span className="badge-pill" style={{ background: 'rgba(99,102,241,0.15)', color: '#818cf8' }}>
+              Attribution Method: {explanation.method}
             </span>
           </div>
 
-          <p style={{ fontSize: '13px', color: '#344054', fontStyle: 'italic', marginBottom: '18px' }}>
+          <p style={{ fontSize: '13px', color: '#a5b4fc', fontStyle: 'italic', marginBottom: '20px' }}>
             {explanation.summary}
           </p>
 
-          <h3>Top Feature Contributions (%)</h3>
+          <h3>Global Feature Importance (%)</h3>
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={chartData} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" unit="%" />
-              <YAxis dataKey="name" type="category" width={110} />
-              <Tooltip />
-              <Bar dataKey="Impact" fill="#6366f1" radius={[0, 4, 4, 0]} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+              <XAxis type="number" unit="%" stroke="#94a3b8" />
+              <YAxis dataKey="name" type="category" width={110} stroke="#94a3b8" />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(255,255,255,0.1)' }}
+              />
+              <Bar dataKey="Impact" fill="#818cf8" radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>
 
-          <h3>Feature Importance Breakdown</h3>
+          <h3>Feature Importance Table</h3>
           <div className="table-wrap">
             <table>
               <thead>
                 <tr>
                   <th>Feature</th>
                   <th>Relative Contribution</th>
-                  <th>Importance Score</th>
+                  <th>Attribution Weight</th>
                 </tr>
               </thead>
               <tbody>
@@ -1157,7 +1331,9 @@ function Monitoring({
     <>
       <section className="panel">
         <div className="panel-head">
-          <h2>Production Data Drift & Performance Degradation</h2>
+          <h2>
+            <ShieldAlert size={18} color="#818cf8" /> Data Drift & Ground Truth Degradation
+          </h2>
           <div style={{ display: 'flex', gap: '10px' }}>
             <select value={modelName} onChange={(e) => setModelName(e.target.value)}>
               <option value="">Select registered model</option>
@@ -1168,21 +1344,32 @@ function Monitoring({
               ))}
             </select>
             <button className="primary" onClick={triggerDriftSimulation} disabled={testingDrift}>
-              {testingDrift ? 'Analyzing Drift…' : 'Run Drift Analysis'}
+              <ShieldAlert size={14} />
+              {testingDrift ? 'Analyzing Distributions…' : 'Simulate & Detect Drift'}
             </button>
           </div>
         </div>
 
         {perfReport && (
-          <div style={{ marginBottom: '20px', padding: '14px', borderRadius: '8px', background: perfReport.degradation_detected ? '#fef3f2' : '#f0fdf4', border: `1px solid ${perfReport.degradation_detected ? '#fee4e2' : '#bbf7d0'}` }}>
-            <h4 style={{ margin: '0 0 6px', color: perfReport.degradation_detected ? '#b42318' : '#166534' }}>
-              Performance Status: {perfReport.status}
+          <div
+            style={{
+              marginBottom: '20px',
+              padding: '14px',
+              borderRadius: '10px',
+              background: perfReport.degradation_detected ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)',
+              border: `1px solid ${perfReport.degradation_detected ? 'rgba(239,68,68,0.3)' : 'rgba(16,185,129,0.3)'}`,
+            }}
+          >
+            <h4 style={{ margin: '0 0 6px', color: perfReport.degradation_detected ? '#f87171' : '#34d399' }}>
+              Model Performance Status: {perfReport.status}
             </h4>
-            <p style={{ margin: 0, fontSize: '13px' }}>{perfReport.recommended_action}</p>
+            <p style={{ margin: 0, fontSize: '13px', color: '#cbd5e1' }}>
+              {perfReport.recommended_action}
+            </p>
           </div>
         )}
 
-        <h3>Historical Drift Reports</h3>
+        <h3>Historical Drift Reports (KS-Test & PSI)</h3>
         {reports.length ? (
           <div className="table-wrap">
             <table>
@@ -1193,7 +1380,7 @@ function Monitoring({
                   <th>Version</th>
                   <th>Samples</th>
                   <th>Severity</th>
-                  <th>Overall Score</th>
+                  <th>Score</th>
                   <th>Recommended Next Action</th>
                 </tr>
               </thead>
@@ -1205,12 +1392,20 @@ function Monitoring({
                     <td>v{r.model_version}</td>
                     <td>{r.sample_count}</td>
                     <td>
-                      <span className={`status ${r.drift_severity === 'NONE' ? 'completed' : r.drift_severity === 'CRITICAL' ? 'failed' : 'queued'}`}>
+                      <span
+                        className={`status ${
+                          r.drift_severity === 'NONE'
+                            ? 'completed'
+                            : r.drift_severity === 'CRITICAL'
+                            ? 'failed'
+                            : 'queued'
+                        }`}
+                      >
                         {r.drift_severity}
                       </span>
                     </td>
                     <td>{r.overall_drift_score}</td>
-                    <td style={{ whiteSpace: 'normal', minWidth: '260px', fontSize: '12px' }}>
+                    <td style={{ whiteSpace: 'normal', minWidth: '280px', fontSize: '12px' }}>
                       {r.recommended_action}
                     </td>
                   </tr>
@@ -1219,7 +1414,7 @@ function Monitoring({
             </table>
           </div>
         ) : (
-          <Empty text="No drift analyses recorded yet. Click 'Run Drift Analysis' above." />
+          <Empty text="No drift analyses recorded yet. Click 'Simulate & Detect Drift' above." />
         )}
       </section>
     </>
@@ -1237,7 +1432,7 @@ function Retraining({
   announce: (x: string) => void
 }) {
   const [modelName, setModelName] = useState(models[0]?.name ?? '')
-  const [reason, setReason] = useState('Manual trigger for testing retraining pipeline')
+  const [reason, setReason] = useState('Feature drift exceeded 0.3 threshold')
   const [history, setHistory] = useState<RetrainingJob[]>([])
   const [triggering, setTriggering] = useState(false)
 
@@ -1263,7 +1458,7 @@ function Retraining({
         model_name: modelName,
         trigger_reason: reason,
       })
-      announce(`Retraining initiated: Job #${job.id} created candidate v${job.candidate_version}`)
+      announce(`Retraining completed! Created candidate model v${job.candidate_version}`)
       await fetchHistory()
     } catch (err) {
       announce((err as Error).message)
@@ -1275,10 +1470,12 @@ function Retraining({
   return (
     <>
       <form className="panel form" onSubmit={handleRetrain}>
-        <h2>Intelligent Retraining Orchestrator</h2>
-        <p style={{ fontSize: '13px', color: '#475467', marginBottom: '16px' }}>
-          Retraining workflows evaluate candidate models, compare against production baselines, and
-          submit approval requests before production deployment.
+        <h2>
+          <RefreshCw size={18} color="#818cf8" /> Trigger Intelligent Retraining Workflow
+        </h2>
+        <p style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '16px' }}>
+          Retraining workflows safely train candidate models in background workers, evaluate against
+          the production baseline, and generate an approval ticket without directly overwriting production.
         </p>
         <div className="twocol">
           <label>
@@ -1293,17 +1490,18 @@ function Retraining({
             </select>
           </label>
           <label>
-            Trigger Reason
+            Trigger Rationale
             <input
               type="text"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="e.g. Feature drift exceeded 0.3 threshold"
+              placeholder="e.g. KS-test detected drift on age/income"
             />
           </label>
         </div>
         <button className="primary submit" disabled={triggering || !modelName}>
-          {triggering ? 'Executing Retraining Workflow…' : 'Trigger Retraining Job'}
+          <RefreshCw size={14} />
+          {triggering ? 'Executing Retraining Workflow…' : 'Trigger Automated Retraining'}
         </button>
       </form>
 
@@ -1319,7 +1517,7 @@ function Retraining({
                   <th>Trigger Reason</th>
                   <th>Status</th>
                   <th>Candidate Version</th>
-                  <th>Approval Request</th>
+                  <th>Governance Gate</th>
                   <th>Timestamp</th>
                 </tr>
               </thead>
@@ -1335,7 +1533,13 @@ function Retraining({
                       <StatusBadge status={j.status} />
                     </td>
                     <td>{j.candidate_version ? `v${j.candidate_version}` : '—'}</td>
-                    <td>{j.approval_id ? `#${j.approval_id} (Pending Review)` : 'None'}</td>
+                    <td>
+                      {j.approval_id ? (
+                        <span className="status queued">Approval Pending (#{j.approval_id})</span>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
                     <td>{new Date(j.created_at).toLocaleTimeString()}</td>
                   </tr>
                 ))}
@@ -1366,7 +1570,10 @@ function Governance({
 
   const handleApprove = async (id: number) => {
     try {
-      await api.approveCandidate(id, { comments: comment || 'Approved by MLOps reviewer', reviewer: 'Lead Engineer' })
+      await api.approveCandidate(id, {
+        comments: comment || 'Verified evaluation metrics and promoted to production.',
+        reviewer: 'Lead MLOps Engineer',
+      })
       announce(`Candidate #${id} approved and promoted to PRODUCTION.`)
       setComment('')
       await onRefresh()
@@ -1377,7 +1584,10 @@ function Governance({
 
   const handleReject = async (id: number) => {
     try {
-      await api.rejectCandidate(id, { comments: comment || 'Rejected during audit', reviewer: 'Lead Engineer' })
+      await api.rejectCandidate(id, {
+        comments: comment || 'Did not meet latency threshold in audit.',
+        reviewer: 'Lead MLOps Engineer',
+      })
       announce(`Candidate #${id} rejected.`)
       setComment('')
       await onRefresh()
@@ -1389,10 +1599,12 @@ function Governance({
   return (
     <>
       <section className="panel">
-        <h2>Model Governance & Promotion Workflow</h2>
-        <p style={{ fontSize: '13px', color: '#475467', marginBottom: '16px' }}>
+        <h2>
+          <FileCheck size={18} color="#818cf8" /> Model Governance & Promotion Gate
+        </h2>
+        <p style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '18px' }}>
           Lifecycle management follows strict state transitions: DEVELOPMENT → CANDIDATE → APPROVED
-          → PRODUCTION → ARCHIVED. Human approval is enforced by default.
+          → PRODUCTION → ARCHIVED. Human review is enforced by default.
         </p>
 
         <h3>Pending Candidate Approvals</h3>
@@ -1403,14 +1615,15 @@ function Governance({
               <div key={appr.id} className="approval-card">
                 <div className="panel-head">
                   <h4>
-                    Candidate: <b>{appr.candidate_model_name}</b> (v{appr.candidate_version})
+                    Candidate Model: <b>{appr.candidate_model_name}</b> (v{appr.candidate_version})
                   </h4>
-                  <span className="status queued">Pending Review</span>
+                  <span className="status queued">Review Pending</span>
                 </div>
-                <p style={{ fontSize: '12px', color: '#475467', margin: '4px 0 10px' }}>
-                  Current Production: {appr.current_production_version ? `v${appr.current_production_version}` : 'None'}
+                <p style={{ fontSize: '12px', color: '#94a3b8', margin: '4px 0 12px' }}>
+                  Current Active Production:{' '}
+                  {appr.current_production_version ? `v${appr.current_production_version}` : 'None'}
                 </p>
-                <div style={{ marginBottom: '12px' }}>
+                <div style={{ marginBottom: '14px' }}>
                   <input
                     type="text"
                     placeholder="Enter review comments or reasoning…"
@@ -1420,10 +1633,10 @@ function Governance({
                 </div>
                 <div className="actions-row">
                   <button className="btn-sm btn-approve" onClick={() => handleApprove(appr.id)}>
-                    ✓ Approve & Promote to Production
+                    <CheckCircle2 size={13} /> Approve & Promote to Production
                   </button>
                   <button className="btn-sm btn-reject" onClick={() => handleReject(appr.id)}>
-                    ✕ Reject Candidate
+                    <XCircle size={13} /> Reject Candidate
                   </button>
                 </div>
               </div>
@@ -1432,7 +1645,7 @@ function Governance({
           <Empty text="No candidate models pending approval." />
         )}
 
-        <h3>Approval History & Decisions</h3>
+        <h3>Approval History</h3>
         {approvals.length ? (
           <div className="table-wrap">
             <table>
@@ -1440,7 +1653,7 @@ function Governance({
                 <tr>
                   <th>Request ID</th>
                   <th>Model</th>
-                  <th>Candidate Version</th>
+                  <th>Version</th>
                   <th>Decision</th>
                   <th>Reviewer</th>
                   <th>Comments</th>
@@ -1457,7 +1670,7 @@ function Governance({
                       <StatusBadge status={a.status} />
                     </td>
                     <td>{a.reviewed_by ?? '—'}</td>
-                    <td style={{ fontSize: '11px' }}>{a.reviewer_comments ?? '—'}</td>
+                    <td style={{ fontSize: '12px' }}>{a.reviewer_comments ?? '—'}</td>
                     <td>{a.resolved_at ? new Date(a.resolved_at).toLocaleTimeString() : 'Pending'}</td>
                   </tr>
                 ))}
@@ -1485,7 +1698,7 @@ function Deployments({
   announce: (x: string) => void
 }) {
   const [modelToRollback, setModelToRollback] = useState(models[0]?.name ?? '')
-  const [reason, setReason] = useState('Degradation detected in production traffic')
+  const [reason, setReason] = useState('Observed latency spike in production traffic')
   const [busy, setBusy] = useState(false)
 
   const handleRollback = async () => {
@@ -1493,7 +1706,7 @@ function Deployments({
     setBusy(true)
     try {
       const rec = await api.rollback(modelToRollback, { reason, initiated_by: 'MLOps Lead' })
-      announce(`Successfully rolled back ${modelToRollback} to version v${rec.version}!`)
+      announce(`Successfully restored ${modelToRollback} to version v${rec.version}!`)
       await onRefresh()
     } catch (err) {
       announce((err as Error).message)
@@ -1505,13 +1718,15 @@ function Deployments({
   return (
     <>
       <section className="panel">
-        <h2>Production Deployments & Safe Rollback</h2>
-        <p style={{ fontSize: '13px', color: '#475467', marginBottom: '16px' }}>
-          SentinelML preserves full model lineage in MLflow. When a model underperforms, authorized
-          users can instantly restore the previous verified production version.
+        <h2>
+          <Rocket size={18} color="#818cf8" /> Production Deployments & Safe Rollback
+        </h2>
+        <p style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '18px' }}>
+          SentinelML maintains immutable model lineage in MLflow. If an active model degrades in production,
+          authorized users can instantly restore the previous verified version with zero downtime.
         </p>
 
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '22px' }}>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '24px' }}>
           <select value={modelToRollback} onChange={(e) => setModelToRollback(e.target.value)}>
             <option value="">Select model for rollback</option>
             {models.map((m) => (
@@ -1525,10 +1740,15 @@ function Deployments({
             placeholder="Rollback justification…"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            style={{ maxWidth: '350px' }}
+            style={{ maxWidth: '360px' }}
           />
-          <button className="btn-sm btn-rollback" onClick={handleRollback} disabled={busy || !modelToRollback}>
-            {busy ? 'Restoring Version…' : '⟲ Rollback Model'}
+          <button
+            className="btn-sm btn-rollback"
+            onClick={handleRollback}
+            disabled={busy || !modelToRollback}
+          >
+            <RotateCcw size={13} />
+            {busy ? 'Restoring…' : 'Rollback Model'}
           </button>
         </div>
 
@@ -1619,7 +1839,9 @@ function Automation({ announce }: { announce: (x: string) => void }) {
   return (
     <>
       <form className="panel form" onSubmit={addRule}>
-        <h2>Configure Automation Rule</h2>
+        <h2>
+          <Settings size={18} color="#818cf8" /> Register Automation Rule
+        </h2>
         <div className="twocol">
           <label>
             Rule Name
@@ -1627,11 +1849,11 @@ function Automation({ announce }: { announce: (x: string) => void }) {
               type="text"
               value={ruleName}
               onChange={(e) => setRuleName(e.target.value)}
-              placeholder="e.g. Automated Drift Watcher"
+              placeholder="e.g. Continuous Drift Watcher"
             />
           </label>
           <label>
-            Model Name
+            Model Target
             <input
               type="text"
               value={modelTarget}
@@ -1648,7 +1870,9 @@ function Automation({ announce }: { announce: (x: string) => void }) {
             <option value="SCHEDULED">Scheduled Interval</option>
           </select>
         </label>
-        <button className="primary submit">Register Automation Rule</button>
+        <button className="primary submit">
+          <Settings size={14} /> Register Automation Rule
+        </button>
       </form>
 
       <section className="panel">
@@ -1659,7 +1883,7 @@ function Automation({ announce }: { announce: (x: string) => void }) {
               <thead>
                 <tr>
                   <th>Rule</th>
-                  <th>Model</th>
+                  <th>Target Model</th>
                   <th>Trigger</th>
                   <th>Cooldown</th>
                   <th>Status</th>
@@ -1686,7 +1910,9 @@ function Automation({ announce }: { announce: (x: string) => void }) {
       </section>
 
       <section className="panel">
-        <h2>Platform Governance Audit Trail</h2>
+        <h2>
+          <Terminal size={18} color="#818cf8" /> Governance Audit Trail
+        </h2>
         {logs.length ? (
           <div className="table-wrap">
             <table>
@@ -1704,7 +1930,7 @@ function Automation({ announce }: { announce: (x: string) => void }) {
                   <tr key={log.id}>
                     <td>{new Date(log.created_at).toLocaleTimeString()}</td>
                     <td>
-                      <span className="badge-pill" style={{ background: '#f2f4f7', color: '#344054' }}>
+                      <span className="badge-pill" style={{ background: 'rgba(255,255,255,0.06)', color: '#e2e8f0' }}>
                         {log.action}
                       </span>
                     </td>
