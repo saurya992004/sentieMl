@@ -1410,7 +1410,14 @@ function Comparisons() {
                         #{m.rank}
                       </span>
                     </td>
-                    <td><b>{m.algorithm}</b></td>
+                    <td>
+                      <b>{m.algorithm}</b>
+                      {m.dataset_name && (
+                        <div style={{ fontSize: '11px', color: '#818cf8', marginTop: '2px' }}>
+                          {m.dataset_name} {m.job_id ? `(Job #${m.job_id})` : ''}
+                        </div>
+                      )}
+                    </td>
                     <td>{m.metrics[metric] !== undefined ? Number(m.metrics[metric]).toFixed(4) : '—'}</td>
                     <td>{m.inference_latency_ms} ms</td>
                     <td>{m.training_time_seconds} s</td>

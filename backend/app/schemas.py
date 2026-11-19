@@ -120,6 +120,8 @@ class ModelRankingItem(BaseModel):
     version: str
     algorithm: str
     problem_type: str
+    dataset_name: str | None = None
+    job_id: int | None = None
     metrics: dict[str, Any]
     training_time_seconds: float
     inference_latency_ms: float

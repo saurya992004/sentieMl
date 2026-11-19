@@ -90,6 +90,8 @@ def rank_models(
             "version": str(e.get("version", "1")),
             "algorithm": algo,
             "problem_type": e.get("problem_type", problem_type),
+            "dataset_name": e.get("dataset_name"),
+            "job_id": e.get("job_id"),
             "metrics": e.get("metrics", {}),
             "training_time_seconds": round(tt, 4),
             "inference_latency_ms": round(lat, 4),

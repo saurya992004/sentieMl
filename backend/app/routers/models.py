@@ -64,19 +64,35 @@ def compare_models(
         .limit(20)
     ).all()
 
-    eval_dicts = [
-        {
+    eval_dicts = []
+    for e in evaluations:
+        job_id = None
+        dataset_name = None
+        if "job_" in e.model_name:
+            try:
+                parts = e.model_name.split("_")
+                idx = parts.index("job")
+                job_id = int(parts[idx + 1])
+                job = db.get(TrainingJob, job_id)
+                if job:
+                    ds = db.get(Dataset, job.dataset_id)
+                    if ds:
+                        dataset_name = ds.name
+            except Exception:
+                pass
+
+        eval_dicts.append({
             "model_name": e.model_name,
             "version": e.version,
             "algorithm": e.algorithm,
             "problem_type": e.problem_type,
+            "dataset_name": dataset_name,
+            "job_id": job_id,
             "metrics": e.metrics,
             "training_time_seconds": e.training_time_seconds,
             "inference_latency_ms": e.inference_latency_ms,
             "model_size_kb": e.model_size_kb,
-        }
-        for e in evaluations
-    ]
+        })
 
     return rank_models(eval_dicts, problem_type=problem_type, primary_metric=primary_metric)
 

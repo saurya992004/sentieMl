@@ -191,6 +191,8 @@ export type ModelRankingItem = {
   version: string
   algorithm: string
   problem_type: string
+  dataset_name?: string
+  job_id?: number
   metrics: Record<string, number>
   training_time_seconds: number
   inference_latency_ms: number
