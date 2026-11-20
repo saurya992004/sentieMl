@@ -1745,6 +1745,7 @@ function Retraining({
   announce: (x: string) => void
 }) {
   const [modelName, setModelName] = useState(models[0]?.name ?? '')
+  const [selectedDatasetId, setSelectedDatasetId] = useState<number | ''>(datasets[0]?.id ?? '')
   const [reason, setReason] = useState('Feature drift exceeded 0.3 threshold')
   const [history, setHistory] = useState<RetrainingJob[]>([])
   const [triggering, setTriggering] = useState(false)
@@ -1770,6 +1771,7 @@ function Retraining({
       const job = await api.triggerRetraining({
         model_name: modelName,
         trigger_reason: reason,
+        dataset_id: selectedDatasetId ? Number(selectedDatasetId) : undefined,
       })
       announce(`Retraining completed! Created candidate model v${job.candidate_version}`)
       await fetchHistory()
@@ -1790,7 +1792,7 @@ function Retraining({
           Retraining workflows safely train candidate models in background workers, evaluate against
           the production baseline, and generate an approval ticket without directly overwriting production.
         </p>
-        <div className="twocol">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', marginBottom: '16px' }}>
           <label>
             Target Model
             <select value={modelName} onChange={(e) => setModelName(e.target.value)}>
@@ -1798,6 +1800,20 @@ function Retraining({
               {models.map((m) => (
                 <option key={m.name} value={m.name}>
                   {m.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Retraining Dataset
+            <select
+              value={selectedDatasetId}
+              onChange={(e) => setSelectedDatasetId(e.target.value ? Number(e.target.value) : '')}
+            >
+              <option value="">Auto (Default to Previous Dataset)</option>
+              {datasets.map((d) => (
+                <option key={d.id} value={d.id}>
+                  #{d.id} - {d.name} ({d.row_count} rows)
                 </option>
               ))}
             </select>
