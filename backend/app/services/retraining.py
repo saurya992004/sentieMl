@@ -65,12 +65,32 @@ def trigger_retraining(
                 raise ValueError("No valid dataset available to perform retraining.")
             target_dataset_id = latest_ds.id
 
-        target_col = prev_job.target_column if prev_job else "target"
-        problem_type = prev_job.problem_type if prev_job else "classification"
-        algorithms = prev_job.algorithms if prev_job else (
-            ["logistic_regression", "random_forest", "gradient_boosting"] if problem_type == "classification" else ["linear_regression", "random_forest", "gradient_boosting"]
+        target_dataset = db.get(Dataset, target_dataset_id)
+        if not target_dataset:
+            raise ValueError(f"Dataset #{target_dataset_id} not found.")
+
+        # Resolve target column
+        target_col = None
+        if prev_job and prev_job.target_column in target_dataset.columns:
+            target_col = prev_job.target_column
+        else:
+            for cand in ["Species", "target", "label", "Exited", "price", "churn"]:
+                if cand in target_dataset.columns:
+                    target_col = cand
+                    break
+            if not target_col:
+                target_col = list(target_dataset.columns.keys())[-1]
+
+        col_type = target_dataset.columns.get(target_col, "object")
+        if prev_job and prev_job.target_column == target_col:
+            problem_type = prev_job.problem_type
+        else:
+            problem_type = "classification" if col_type in ["object", "string", "category"] else "regression"
+
+        algorithms = prev_job.algorithms if (prev_job and prev_job.problem_type == problem_type) else (
+            ["random_forest", "gradient_boosting"] if problem_type == "classification" else ["random_forest", "gradient_boosting"]
         )
-        primary_metric = prev_job.primary_metric if prev_job else ("f1" if problem_type == "classification" else "rmse")
+        primary_metric = prev_job.primary_metric if (prev_job and prev_job.problem_type == problem_type) else ("f1" if problem_type == "classification" else "rmse")
 
         retrain_job = RetrainingJob(
             rule_id=rule_id,
@@ -98,8 +118,16 @@ def trigger_retraining(
         db.refresh(child_job)
 
         # Run training synchronously or via task
-        from .ml import run_training
-        run_training(child_job.id, raise_on_error=True)
+        try:
+            from .ml import run_training
+            run_training(child_job.id, raise_on_error=True)
+        except Exception as train_exc:
+            db.refresh(child_job)
+            retrain_job.status = "FAILED"
+            retrain_job.error = str(train_exc)
+            retrain_job.completed_at = datetime.now(timezone.utc)
+            db.commit()
+            raise
 
         db.refresh(child_job)
         if child_job.status == "COMPLETED":

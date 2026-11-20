@@ -112,6 +112,7 @@ services:
       GEMINI_API_KEY: ${GEMINI_API_KEY:-AQ.Ab8RN6LezP5PPnVzwwP87vDCM0acQVX2kR22J12CS06Gc5l0mQ}
     volumes:
       - uploads_data:/data/uploads
+      - ./backend/app:/app/app
     ports: ["8000:8000"]
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2)"]
@@ -129,6 +130,7 @@ services:
     environment: *app_env
     volumes:
       - uploads_data:/data/uploads
+      - ./backend/app:/app/app
 
   frontend:
     build:
